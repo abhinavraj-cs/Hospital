@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --color-primary: #0ea5e9;
+  --color-primary-foreground: #ffffff;
+}
+
+:root {
+  --background: 210 40% 98%;
+  --foreground: 222.2 47.4% 11.2%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 47.4% 11.2%;
+  
+  --primary: 199 89% 48%; /* Sky 500 */
+  --primary-foreground: 210 40% 98%;
+  
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 214.3 31.8% 91.4%;
+  --radius: 12px;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Apple-like soft shadows */
+.clinical-card {
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: var(--radius);
+  transition: all 0.2s ease-in-out;
+}
+
+.clinical-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03), 0 12px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+  border-color: rgba(14, 165, 233, 0.2); /* Soft primary border on hover */
+}
+
+/* Clinical subtle gradients for headers */
+.clinical-header-gradient {
+  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+}

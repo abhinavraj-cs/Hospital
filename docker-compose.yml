@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+
+  api:
+    build: ./apps/api
+    ports: ["3001:3001"]
+    depends_on: [postgres]
+
+  web:
+    build: ./apps/web
+    ports: ["5173:5173"]
+    depends_on: [api]

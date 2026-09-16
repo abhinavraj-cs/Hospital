@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DOCTOR
+  STAFF
+  PATIENT
+}
+
+enum DoctorStatus {
+  AVAILABLE
+  ON_LEAVE
+  BUSY
+}
+
+enum DepartmentCategory {
+  EMERGENCY
+  CLINICAL
+  DIAGNOSTIC
+  SURGICAL
+  SUPPORT
+}
+
+enum RoomType {
+  CONSULTATION
+  WARD
+  ICU
+  OT
+  LAB
+}
+
+enum NodeType {
+  ENTRANCE
+  CORRIDOR
+  ELEVATOR
+  STAIRS
+  DEPARTMENT
+  ROOM
+  RESTROOM
+  EMERGENCY
+  STAIR
+  ESCALATOR
+  EXIT
+  INTERSECTION
+}
+
+enum QueueEntryStatus {
+  WAITING
+  CALLED
+  COMPLETED
+  SKIPPED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String
+  role          UserRole
+  refreshToken  String?
+  patient       Patient?
+  doctor        Doctor?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Patient {
+  id         String       @id @default(uuid())
+  userId     String       @unique
+  user       User         @relation(fields: [userId], references: [id])
+  queueEntry QueueEntry[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model Hospital {
+  id          String       @id @default(uuid())
+  name        String
+  address     String
+  latitude    Float?
+  longitude   Float?
+  contact     String?
+  buildings   Building[]
+  departments Department[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Building {
+  id         String     @id @default(uuid())
+  hospitalId String
+  hospital   Hospital   @relation(fields: [hospitalId], references: [id])
+  name       String
+  code       String
+  floors     Floor[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Floor {
+  id          String           @id @default(uuid())
+  buildingId  String
+  building    Building         @relation(fields: [buildingId], references: [id])
+  floorNumber Int
+  name        String
+  departments Department[]
+  rooms       Room[]
+  nodes       NavigationNode[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Department {
+  id         String             @id @default(uuid())
+  hospitalId String
+  hospital   Hospital           @relation(fields: [hospitalId], references: [id])
+  floorId    String
+  floor      Floor              @relation(fields: [floorId], references: [id])
+  name       String
+  code       String
+  category   DepartmentCategory
+  rooms            Room[]
+  doctors          Doctor[]
+  queues           Queue[]
+  navigationNodes  NavigationNode[]
+  createdAt        DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+model Room {
+  id           String      @id @default(uuid())
+  floorId      String
+  floor        Floor       @relation(fields: [floorId], references: [id])
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  roomNumber   String      @unique
+  name         String
+  type         RoomType
+  doctors      Doctor[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Doctor {
+  id                 String       @id @default(uuid())
+  userId             String       @unique
+  user               User         @relation(fields: [userId], references: [id])
+  employeeId         String       @unique
+  specialization     String
+  departmentId       String
+  department         Department   @relation(fields: [departmentId], references: [id])
+  roomId             String?
+  room               Room?        @relation(fields: [roomId], references: [id])
+  availabilityStatus DoctorStatus
+  consultationStart  String
+  consultationEnd    String
+  queues             Queue[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Queue {
+  id                      String       @id @default(uuid())
+  doctorId                String       @unique
+  doctor                  Doctor       @relation(fields: [doctorId], references: [id])
+  departmentId            String
+  department              Department   @relation(fields: [departmentId], references: [id])
+  currentNumber           Int          @default(0)
+  waitingCount            Int          @default(0)
+  averageConsultationTime Int          @default(15)
+  isActive                Boolean      @default(true)
+  entries                 QueueEntry[]
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+}
+
+model QueueEntry {
+  id          String           @id @default(uuid())
+  queueId     String
+  queue       Queue            @relation(fields: [queueId], references: [id])
+  patientId   String
+  patient     Patient          @relation(fields: [patientId], references: [id])
+  tokenNumber Int
+  status      QueueEntryStatus @default(WAITING)
+  calledAt    DateTime?
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model NavigationNode {
+  id           String           @id @default(uuid())
+  floorId      String
+  floor        Floor            @relation(fields: [floorId], references: [id])
+  departmentId String?
+  department   Department?      @relation(fields: [departmentId], references: [id])
+  x            Float
+  y            Float
+  nodeType     NodeType
+  label        String?
+  accessible   Boolean          @default(true)
+  roomId       String?
+  buildingId   String?
+  metadata     Json?
+  edgesFrom    NavigationEdge[] @relation("EdgeFrom")
+  edgesTo      NavigationEdge[] @relation("EdgeTo")
+  qrCodes      QRCodeLocation[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model NavigationEdge {
+  id               String         @id @default(uuid())
+  fromNodeId       String
+  fromNode         NavigationNode @relation("EdgeFrom", fields: [fromNodeId], references: [id])
+  toNodeId         String
+  toNode           NavigationNode @relation("EdgeTo", fields: [toNodeId], references: [id])
+  distance         Float
+  accessible       Boolean        @default(true)
+  elevatorRequired Boolean        @default(false)
+  stairsRequired   Boolean        @default(false)
+  isEmergencyRoute Boolean        @default(false)
+  bidirectional    Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model QRCodeLocation {
+  id        String         @id @default(uuid())
+  nodeId    String
+  node      NavigationNode @relation(fields: [nodeId], references: [id])
+  code      String         @unique
+  label     String?
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  userId    String?
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String?
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  patientId String
+  doctorId  String
+  date      DateTime
+  status    String   @default("SCHEDULED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

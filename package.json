@@ -1,0 +1,44 @@
+{
+  "name": "hospital-navigation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Smart Hospital Indoor Navigation & Doctor Availability Platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/api & npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm run test --workspace=apps/api",
+    "test:web": "npm run test --workspace=apps/web",
+    "test:nav": "npm run test --workspace=packages/navigation-engine",
+    "lint": "npm run lint --workspaces --if-present",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "prisma:generate": "npx prisma generate --schema=prisma/schema.prisma",
+    "prisma:migrate": "npx prisma migrate dev --schema=prisma/schema.prisma",
+    "prisma:migrate:deploy": "npx prisma migrate deploy --schema=prisma/schema.prisma",
+    "prisma:seed": "npx tsx prisma/seed.ts",
+    "prisma:studio": "npx prisma studio --schema=prisma/schema.prisma",
+    "prisma:reset": "npx prisma migrate reset --schema=prisma/schema.prisma --force",
+    "db:setup": "npm run prisma:migrate && npm run prisma:seed",
+    "clean": "rimraf node_modules apps/*/node_modules packages/*/node_modules"
+  },
+  "devDependencies": {
+    "prisma": "^6.8.0",
+    "tsx": "^4.19.0",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.8.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

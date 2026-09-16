@@ -1,0 +1,310 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CareNav - Admin Map Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#e1e3e4",
+                      "secondary-fixed-dim": "#96ccff",
+                      "on-primary-fixed-variant": "#2e476f",
+                      "surface-container-low": "#f3f4f5",
+                      "on-background": "#191c1d",
+                      "primary-fixed": "#d6e3ff",
+                      "inverse-surface": "#2e3132",
+                      "on-error-container": "#93000a",
+                      "on-primary": "#ffffff",
+                      "on-surface-variant": "#44474e",
+                      "on-secondary-fixed": "#001d32",
+                      "surface": "#f8f9fa",
+                      "tertiary-container": "#4f2f00",
+                      "surface-container-highest": "#e1e3e4",
+                      "on-tertiary-container": "#c6965e",
+                      "error": "#ba1a1a",
+                      "on-primary-container": "#87a0cd",
+                      "on-tertiary-fixed-variant": "#623f0f",
+                      "primary-container": "#1b365d",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-tint": "#465f88",
+                      "tertiary-fixed-dim": "#f1bd81",
+                      "on-tertiary-fixed": "#2b1700",
+                      "primary": "#002046",
+                      "surface-bright": "#f8f9fa",
+                      "outline-variant": "#c4c6cf",
+                      "surface-dim": "#d9dadb",
+                      "secondary-fixed": "#cee5ff",
+                      "surface-container": "#edeeef",
+                      "on-tertiary": "#ffffff",
+                      "on-surface": "#191c1d",
+                      "surface-container-high": "#e7e8e9",
+                      "secondary-container": "#51b2fe",
+                      "on-primary-fixed": "#001b3d",
+                      "error-container": "#ffdad6",
+                      "primary-fixed-dim": "#aec7f7",
+                      "on-secondary-fixed-variant": "#004a75",
+                      "secondary": "#00639a",
+                      "inverse-primary": "#aec7f7",
+                      "on-secondary-container": "#00436a",
+                      "outline": "#74777f",
+                      "background": "#f8f9fa",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed": "#ffddb9",
+                      "on-secondary": "#ffffff",
+                      "inverse-on-surface": "#f0f1f2",
+                      "tertiary": "#321c00"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "unit": "4px",
+                      "xs": "4px",
+                      "xxl": "48px",
+                      "margin-mobile": "16px",
+                      "lg": "24px",
+                      "gutter": "16px",
+                      "touch-target": "48px",
+                      "margin-desktop": "32px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "title-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen overflow-hidden">
+<div class="flex h-screen w-full">
+<!-- SideNavBar Shared Component -->
+<nav class="hidden md:flex flex-col h-full w-64 border-r border-outline-variant bg-surface-container-lowest py-lg transition-all duration-200 ease-in-out z-20 shrink-0">
+<!-- Header -->
+<div class="px-md mb-xl flex items-center gap-md">
+<img alt="Staff Profile" class="w-12 h-12 rounded-full object-cover border border-outline-variant" data-alt="A clean, professional headshot of a hospital administrator in a well-lit, modern office environment. They are wearing practical business casual attire. The image is brightly lit, adhering to a sterile but welcoming light-mode aesthetic with clinical blue undertones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJVwGHTPeYIm8j48ZrRyE1Yg3p5IaTbj94q0j0xXS3TEzgnIoNR8rdeIlfa5IdsmaPb6-8rtDMvilixQYEzkdQ8x8KvjMaY8k4BdiWQV_4uN9rt94ZWa2g2WxKEm8IUx4oWbl4xPRu4u742BJud2uYDtduW0KiHCGUS8qmPs5whd76Lan6dsyGe9Az0XsCXfKXAPDCwCcOHs4qOOO0gS6KO3q1zX0pA37iRG4cUyVWI-JHOMThz67e">
+<div>
+<h1 class="font-title-md text-title-md font-semibold text-on-surface">Admin Console</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Staff Access Only</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-sm px-md">
+<a class="flex items-center gap-md px-4 py-2 text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors rounded-lg group" href="{{DATA:SCREEN:SCREEN_4}}">
+<span class="material-symbols-outlined" data-icon="clinical_notes">clinical_notes</span>
+<span class="font-label-md text-label-md">Operations</span>
+</a>
+<a class="flex items-center gap-md px-4 py-2 text-primary font-bold border-l-4 border-primary bg-primary-container/10 rounded-r-lg" href="#">
+<span class="material-symbols-outlined" data-icon="map" data-weight="fill" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-label-md text-label-md">Map Editor</span>
+</a>
+<a class="flex items-center gap-md px-4 py-2 text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-label-md text-label-md">Analytics</span>
+</a>
+<a class="flex items-center gap-md px-4 py-2 text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="emergency_home">emergency_home</span>
+<span class="font-label-md text-label-md">Emergency</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="px-md mt-auto mb-md">
+<button class="w-full h-touch-target bg-error text-on-error font-label-lg text-label-lg rounded-lg flex items-center justify-center gap-sm active:scale-95 transition-transform shadow-sm">
+<span class="material-symbols-outlined">warning</span>
+                    Code Blue Alert
+                </button>
+</div>
+<!-- Footer Links -->
+<div class="border-t border-outline-variant pt-md px-md flex flex-col gap-sm">
+<a class="flex items-center gap-md px-4 py-2 text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-md px-4 py-2 text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md">Help</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex relative bg-surface-dim overflow-hidden">
+<!-- Map Workspace -->
+<div class="flex-1 relative cursor-crosshair group">
+<!-- Blueprint Background -->
+<div class="absolute inset-0 bg-cover bg-center opacity-70" data-alt="A highly detailed, technical blueprint of a large modern hospital floor plan viewed from directly above. The blueprint is rendered in high contrast with deep clinical blue lines on a crisp white background. It shows corridors, structural pillars, and various partitioned rooms with technical architectural notations, adhering to a minimalist practical medical aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJ_nkfRzar9B9U1WlG_dSrdxgPF-iW4oagIZNMZT0i8mbfyMxoga2pSKzvQeiV57hvVcmI0_SxKxiSJkoShA6OBN_iX-Ow1OqbIcPa4fiGJJZskBUbMiMImcJTUb9HbZKkDCgI9OF3btE8eBlsbkZccL64ECJTpfQYWrCHGvPGrtACEo8UIU0eX-DJjvr8cTNvX9b13wqfryAQyrgiizKd1H--nSA34sWO-OP1aMMCVkNz91hQNByr')"></div>
+<!-- Grid Overlay -->
+<div class="absolute inset-0 pointer-events-none" style="background-size: 40px 40px; background-image: linear-gradient(to right, rgba(196, 199, 197, 0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(196, 199, 197, 0.2) 1px, transparent 1px);"></div>
+<!-- Floating Toolbar -->
+<div class="absolute left-md top-md bg-surface border border-outline-variant rounded-xl shadow-sm flex flex-col p-unit z-10">
+<button class="w-10 h-10 flex items-center justify-center text-primary bg-primary-container rounded-lg mb-unit hover:bg-primary-container/80 transition-colors" title="Pointer Tool">
+<span class="material-symbols-outlined">arrow_selector_tool</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg mb-unit transition-colors" title="Draw Path">
+<span class="material-symbols-outlined">polyline</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg mb-unit transition-colors" title="Add Room Node">
+<span class="material-symbols-outlined">add_location_alt</span>
+</button>
+<div class="w-full h-px bg-outline-variant my-unit"></div>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg mb-unit transition-colors" title="Zoom In">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg transition-colors" title="Zoom Out">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+</div>
+</div>
+<!-- Node Properties Side Panel -->
+<aside class="w-80 bg-surface border-l border-outline-variant flex flex-col h-full z-10 shrink-0">
+<div class="p-md border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-on-surface">Node Properties</h2>
+<span class="px-2 py-1 bg-primary-container text-on-primary-container rounded font-label-md text-label-md">Selected</span>
+</div>
+<div class="p-md flex-1 overflow-y-auto flex flex-col gap-lg">
+<!-- Form Group: ID -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Node ID</label>
+<input class="w-full h-10 px-sm bg-surface-container-low border-outline-variant rounded-lg text-on-surface-variant font-body-md cursor-not-allowed" disabled="" type="text" value="ND-304-CRD">
+</div>
+<!-- Form Group: Name -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface">Display Name</label>
+<input class="w-full h-10 px-sm bg-surface border border-outline-variant rounded-lg text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" value="Cardiology Waiting Area B">
+</div>
+<!-- Form Group: Department -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface">Department Category</label>
+<select class="w-full h-10 px-sm bg-surface border border-outline-variant rounded-lg text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors">
+<option>Cardiology</option>
+<option>Neurology</option>
+<option>Pediatrics</option>
+<option>General Routing</option>
+</select>
+</div>
+<!-- Form Group: Toggles -->
+<div class="flex flex-col gap-md pt-md border-t border-outline-variant">
+<label class="flex items-center justify-between cursor-pointer">
+<span class="font-body-md text-on-surface">Wheelchair Accessible</span>
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between cursor-pointer">
+<span class="font-body-md text-on-surface">Staff Only Route</span>
+<div class="relative">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+</div>
+</div>
+<div class="p-md border-t border-outline-variant bg-surface-container-lowest flex gap-sm">
+<button class="flex-1 h-touch-target bg-primary text-on-primary font-label-lg text-label-lg rounded-lg active:scale-95 transition-transform">
+                        Save Changes
+                    </button>
+<button class="w-touch-target h-touch-target flex items-center justify-center border border-error text-error rounded-lg hover:bg-error-container transition-colors" title="Delete Node">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</aside>
+</main>
+</div>
+
+
+</body></html>
