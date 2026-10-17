@@ -1,58 +1,112 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
-  --color-primary: #0ea5e9;
-  --color-primary-foreground: #ffffff;
+  --font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Poppins', sans-serif;
+
+  --color-indigo-primary: #3E36B0;
+  --color-indigo-dark: #302991;
+  --color-indigo-light: #4D45CA;
+  
+  --color-sky-accent: #A6DEF7;
+  --color-sky-soft: #F0F9FD;
+  --color-sky-border: #C8ECFA;
+
+  --color-charcoal-body: #111111;
+  --color-charcoal-muted: #4B5563;
+
+  --color-magenta-emergency: #F62088;
+  --color-magenta-dark: #D81473;
+  --color-magenta-soft: #FDF2F7;
+
+  --color-teal-status: #1B8B8E;
+  --color-teal-dark: #146B6E;
+  --color-teal-soft: #E6F5F6;
+
+  --color-blue-audio: #002BFF;
+  --color-blue-audio-dark: #0022CC;
+  --color-blue-audio-soft: #EBF0FF;
 }
 
 :root {
-  --background: 210 40% 98%;
-  --foreground: 222.2 47.4% 11.2%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 47.4% 11.2%;
-  
-  --primary: 199 89% 48%; /* Sky 500 */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 214.3 31.8% 91.4%;
-  --radius: 12px;
+  --font-family-base: 'Poppins', sans-serif;
+  --radius-card: 1rem; /* rounded-2xl */
+  --radius-card-lg: 1.5rem; /* rounded-3xl */
+}
+
+* {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #F8FAFC;
+  color: #111111;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Apple-like soft shadows */
-.clinical-card {
-  background-color: white;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
-  border-radius: var(--radius);
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: -0.015em;
+}
+
+p, span, div, label, input, button {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Layered card shadows according to the design system */
+.card-layered {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(166, 222, 247, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(62, 54, 176, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  border-radius: 1rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-layered:hover {
+  box-shadow: 0 12px 30px -4px rgba(62, 54, 176, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+  border-color: rgba(62, 54, 176, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Primary Header & Main Action button styling */
+.btn-primary-indigo {
+  background-color: #3E36B0;
+  color: #FFFFFF;
+  font-weight: 700;
   transition: all 0.2s ease-in-out;
 }
-
-.clinical-card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03), 0 12px 24px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-  border-color: rgba(14, 165, 233, 0.2); /* Soft primary border on hover */
+.btn-primary-indigo:hover {
+  background-color: #302991;
+  box-shadow: 0 4px 14px rgba(62, 54, 176, 0.35);
 }
 
-/* Clinical subtle gradients for headers */
-.clinical-header-gradient {
-  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+/* Audio Guidance button with Electric Blue & Sky Blue accents */
+.btn-audio-electric {
+  background-color: #002BFF;
+  color: #FFFFFF;
+  font-weight: 700;
+  transition: all 0.2s ease-in-out;
+}
+.btn-audio-electric:hover {
+  background-color: #0022CC;
+  box-shadow: 0 4px 18px rgba(0, 43, 255, 0.4);
+}
+
+/* Emergency Vivid Magenta alert */
+.badge-emergency {
+  background-color: #F62088;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* Deep Teal Status Pill */
+.badge-teal-serving {
+  background-color: #1B8B8E;
+  color: #FFFFFF;
+  font-weight: 700;
 }

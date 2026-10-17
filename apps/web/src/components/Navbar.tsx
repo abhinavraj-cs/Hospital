@@ -21,30 +21,39 @@ function getRoleDashboardPath(role: string): string {
 
 export function Navbar() {
   const { isAuthenticated, user } = useAuthStore();
-  const { roleView, setRoleView, language, setLanguage } = useQueueTrackerStore();
+  const { roleView, setRoleView, setLanguage } = useQueueTrackerStore();
   const { lang, setLang, t } = useLanguage();
 
   const navCls = ({ isActive }: { isActive: boolean }) =>
-    `text-sm font-medium transition-colors ${
-      isActive ? 'text-sky-600 font-bold' : 'text-slate-600 hover:text-sky-600'
+    `text-sm font-semibold transition-colors duration-150 ${
+      isActive
+        ? 'text-[#3E36B0] font-bold border-b-2 border-[#3E36B0] pb-1'
+        : 'text-[#4B5563] hover:text-[#3E36B0]'
     }`;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-[#A6DEF7]/50 bg-white/95 backdrop-blur-md shadow-xs">
       <div className="container flex h-16 items-center px-4 mx-auto justify-between max-w-7xl">
         {/* Brand Logo */}
         <a
-          className="flex items-center space-x-2 shrink-0"
+          className="flex items-center space-x-2.5 shrink-0 group"
           href={isAuthenticated && user ? getRoleDashboardPath(user.role) : '/'}
         >
-          <img
-            src="/logo-white.png"
-            alt="ArogyaMitra Logo"
-            className="w-10 h-10 rounded-lg object-cover shadow-sm"
-          />
-          <span className="font-bold text-xl tracking-tight text-slate-900">
-            ArogyaMitra
-          </span>
+          <div className="w-10 h-10 rounded-2xl bg-[#3E36B0] flex items-center justify-center shadow-md shadow-[#3E36B0]/20 p-1.5 transition-transform group-hover:scale-105">
+            <img
+              src="/logo-white.png"
+              alt="ArogyaMitra Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div>
+            <span className="font-extrabold text-xl tracking-tight text-[#111111] block leading-none">
+              ArogyaMitra
+            </span>
+            <span className="text-[10px] font-semibold text-[#3E36B0] uppercase tracking-wider block mt-0.5">
+              Smart Hospital Queue
+            </span>
+          </div>
         </a>
 
         {/* Navigation Links */}
@@ -75,8 +84,8 @@ export function Navbar() {
 
           <NavLink to="/multi-queue" className={navCls}>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              {t('queueSystem')}
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1B8B8E] animate-pulse"></span>
+              <span>{t('queueSystem')}</span>
             </span>
           </NavLink>
 
@@ -89,25 +98,32 @@ export function Navbar() {
           <NavLink to="/search" className={navCls}>
             Search
           </NavLink>
-          <NavLink to="/emergency" className={navCls}>
+          <NavLink to="/emergency" className={({ isActive }) => 
+            `text-sm font-bold flex items-center gap-1 px-3 py-1 rounded-xl transition-all ${
+              isActive
+                ? 'bg-[#F62088] text-white shadow-sm'
+                : 'text-[#F62088] hover:bg-[#F62088]/10'
+            }`
+          }>
+            <span className="w-2 h-2 rounded-full bg-[#F62088] animate-ping inline-block"></span>
             {t('emergency')}
           </NavLink>
         </nav>
 
         {/* Action Controls: Language & Role Views */}
-        <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-end">
-          {/* Language Toggle */}
-          <div className="flex items-center border rounded-lg overflow-hidden text-sm font-medium">
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          {/* Language Toggle: Active fills with #3E36B0, inactive with #F1F5F9 */}
+          <div className="flex items-center bg-[#F1F5F9] p-1 rounded-2xl border border-slate-200 text-xs font-semibold shadow-xs">
             <button
               type="button"
               onClick={() => {
                 setLang('en');
                 setLanguage('en');
               }}
-              className={`px-3 py-1 transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all duration-150 ${
                 lang === 'en'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-[#3E36B0] text-white font-bold shadow-xs'
+                  : 'text-[#111111] hover:bg-white/70'
               }`}
             >
               EN
@@ -118,10 +134,10 @@ export function Navbar() {
                 setLang('hi');
                 setLanguage('hi');
               }}
-              className={`px-3 py-1 transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all duration-150 ${
                 lang === 'hi'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-[#3E36B0] text-white font-bold shadow-xs'
+                  : 'text-[#111111] hover:bg-white/70'
               }`}
             >
               हिन्दी
@@ -129,14 +145,14 @@ export function Navbar() {
           </div>
 
           {/* Role Toggle: [Patient View] | [Staff View] | [Public Display] */}
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200 text-xs font-medium shadow-inner">
+          <div className="flex items-center bg-[#F1F5F9] p-1 rounded-2xl border border-slate-200 text-xs font-semibold shadow-xs">
             <button
               type="button"
               onClick={() => setRoleView('patient')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                 roleView === 'patient'
-                  ? 'bg-white text-sky-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#3E36B0] text-white shadow-xs font-bold'
+                  : 'text-[#111111] hover:bg-white/70'
               }`}
             >
               <span>👤</span>
@@ -145,10 +161,10 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setRoleView('staff')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                 roleView === 'staff'
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#1B8B8E] text-white shadow-xs font-bold'
+                  : 'text-[#111111] hover:bg-white/70'
               }`}
             >
               <span>👨‍⚕️</span>
@@ -157,10 +173,10 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setRoleView('display')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                 roleView === 'display'
-                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#002BFF] text-white shadow-xs font-bold'
+                  : 'text-[#111111] hover:bg-white/70'
               }`}
             >
               <span>📺</span>
