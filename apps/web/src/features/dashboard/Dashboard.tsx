@@ -23,7 +23,11 @@ import {
   Timer,
   Activity,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  PauseCircle,
+  RotateCcw,
+  Zap,
+  Inbox
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueueTrackerStore, DepartmentQueue } from '../queues/queueTrackerStore';
@@ -41,6 +45,8 @@ export function Dashboard() {
     setSelectedDept,
     userToken,
     departments,
+    heldTokens,
+    reclaimedTokens,
     logs,
     isAnnouncing,
     trackToken,
@@ -48,6 +54,8 @@ export function Dashboard() {
     callNextToken,
     markConsultationDone,
     markNoShow,
+    handlePutOnHold,
+    handleReclaimQueue,
     addDoctorDelay,
     speakQueueStatus,
     resetToDefault,
@@ -60,18 +68,27 @@ export function Dashboard() {
   const isHi = language === 'hi';
   const currentDept: DepartmentQueue = departments[selectedDeptId] || departments.opd;
 
+  // Check if current tracked token is on hold or has been reclaimed
+  const heldTokenEntry = heldTokens.find((h) => h.tokenCode === userToken);
+  const isHeld = !!heldTokenEntry;
+  const reclaimedEntry = reclaimedTokens[userToken];
+  const isReclaimed = !!reclaimedEntry;
+
   // Calculate dynamics for the tracked user token
   const tokenParts = userToken.split('-');
   const tokenPrefix = tokenParts[0] || 'OPD';
-  const tokenNumber = parseInt(tokenParts[1] || '104', 10);
+  const originalTokenNum = parseInt(tokenParts[1] || '104', 10);
+  const tokenNumber = isReclaimed ? reclaimedEntry.reclaimSlot : originalTokenNum;
 
   const servingNumber = currentDept.nowServing;
-  const tokensAhead = Math.max(0, tokenNumber - servingNumber);
-  const isBeingServed = servingNumber === tokenNumber;
-  const isPast = servingNumber > tokenNumber;
+  const tokensAhead = isHeld ? 0 : Math.max(0, tokenNumber - servingNumber);
+  const isBeingServed = !isHeld && servingNumber === tokenNumber;
+  const isPast = !isHeld && servingNumber > tokenNumber;
 
   // Wait time calculation: tokensAhead * avgTime + delayMinutes
-  const dynamicWaitTime = isBeingServed
+  const dynamicWaitTime = isHeld
+    ? 0
+    : isBeingServed
     ? 0
     : isPast
     ? 0
@@ -96,15 +113,19 @@ export function Dashboard() {
   // Build the horizontal progress steps (e.g. serving -> serving+1 -> serving+2 -> userToken)
   const progressSteps = [];
   const startStep = Math.max(1, servingNumber);
-  const targetStep = Math.max(startStep, tokenNumber);
+  const targetStep = isHeld 
+    ? startStep + 3 
+    : Math.max(startStep + 2, Math.min(startStep + 5, tokenNumber));
 
   for (let num = startStep; num <= targetStep; num++) {
+    const isStepUser = isHeld ? false : num === tokenNumber;
     progressSteps.push({
       num,
       tokenStr: `${currentDept.prefix}-${num}`,
       isCurrent: num === servingNumber,
-      isUser: num === tokenNumber,
+      isUser: isStepUser,
       isCompleted: num < servingNumber,
+      isReclaimedSlot: isReclaimed && num === reclaimedEntry.reclaimSlot,
     });
   }
 
@@ -448,23 +469,33 @@ export function Dashboard() {
           {/* Quick chip suggestions */}
           <div className="flex items-center gap-2 mt-3.5 text-xs text-[#4B5563] flex-wrap">
             <span className="font-semibold text-[#111111]">{t('quickSelect')}</span>
-            {['OPD-101', 'OPD-104', 'OPD-108', 'LAB-24', 'PH-65'].map((tVal) => (
-              <button
-                key={tVal}
-                type="button"
-                onClick={() => {
-                  setInputToken(tVal);
-                  trackToken(tVal);
-                }}
-                className={`px-3 py-1 rounded-xl font-mono font-bold transition-all border ${
-                  userToken === tVal
-                    ? 'bg-[#3E36B0] text-white border-[#3E36B0] shadow-xs'
-                    : 'bg-white hover:bg-[#F0F9FD] text-[#111111] border-[#A6DEF7]/60'
-                }`}
-              >
-                {tVal}
-              </button>
-            ))}
+            {['OPD-100', 'OPD-101', 'OPD-104', 'OPD-108', 'LAB-24', 'PH-65'].map((tVal) => {
+              const isChipHeld = heldTokens.some((h) => h.tokenCode === tVal);
+              return (
+                <button
+                  key={tVal}
+                  type="button"
+                  onClick={() => {
+                    setInputToken(tVal);
+                    trackToken(tVal);
+                  }}
+                  className={`px-3 py-1 rounded-xl font-mono font-bold transition-all border flex items-center gap-1.5 ${
+                    userToken === tVal
+                      ? 'bg-[#3E36B0] text-white border-[#3E36B0] shadow-xs'
+                      : isChipHeld
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                      : 'bg-white hover:bg-[#F0F9FD] text-[#111111] border-[#A6DEF7]/60'
+                  }`}
+                >
+                  <span>{tVal}</span>
+                  {isChipHeld && (
+                    <span className="text-[9px] bg-amber-200 text-amber-900 px-1 rounded-sm uppercase font-sans">
+                      HOLD
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </motion.div>
@@ -909,6 +940,105 @@ export function Dashboard() {
               </motion.div>
             )}
 
+            {/* ─── Requirement 3: Patient View UI - Amber Status Card: Token Paused / On Hold ─── */}
+            {isHeld && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-5 p-6 md:p-7 bg-amber-50 border-2 border-amber-400 rounded-3xl shadow-[0_8px_30px_rgba(245,158,11,0.15)] text-amber-950 relative overflow-hidden"
+              >
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3.5 bg-amber-200/90 text-amber-900 rounded-2xl shrink-0 border border-amber-400/60 shadow-xs">
+                      <PauseCircle className="h-8 w-8 text-amber-800 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-200 text-amber-900 px-3 py-0.5 rounded-full border border-amber-400/60">
+                          {isHi ? 'ऑन-होल्ड स्थिति' : 'ON-HOLD STATUS'}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-amber-900">
+                          {userToken}
+                        </span>
+                        <span className="text-[11px] text-amber-800 font-medium">
+                          • {heldTokenEntry?.heldAt || '12:08 PM'}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl md:text-2xl font-bold text-amber-950 mt-1.5 tracking-tight">
+                        {t('onHoldTitle')}
+                      </h3>
+                      <p className="text-xs md:text-sm font-normal text-amber-900 mt-1.5 leading-relaxed max-w-2xl">
+                        {t('onHoldMessage')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Interactive Button: I am Back at the Counter */}
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      handleReclaimQueue(userToken);
+                      toast.success(
+                        isHi
+                          ? `टोकन ${userToken} कतार में पुनः सम्मिलित! स्लॉट ${currentDept.prefix}-${servingNumber + 2} पर उच्च प्राथमिकता मिली।`
+                          : `Token ${userToken} re-admitted to line! Restored at slot ${currentDept.prefix}-${servingNumber + 2} with Elevated Priority.`
+                      );
+                    }}
+                    className="w-full md:w-auto px-6 py-4 bg-[#3E36B0] hover:bg-[#302991] text-white font-bold rounded-2xl shadow-lg shadow-[#3E36B0]/25 flex items-center justify-center gap-2.5 shrink-0 transition-all text-sm group"
+                  >
+                    <RotateCcw className="h-5 w-5 group-hover:-rotate-90 transition-transform duration-300" />
+                    <span>{t('iAmBack')}</span>
+                  </motion.button>
+                </div>
+
+                {/* Backtracking explanation indicator */}
+                <div className="mt-4 pt-3 border-t border-amber-300 flex items-center justify-between text-xs text-amber-900">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                    {isHi
+                      ? 'वापस लौटने पर आप वर्तमान सेवा टोकन के 2 स्थान पीछे तुरंत जोड़े जाएंगे।'
+                      : 'Backtracking logic restores your spot 2 slots behind currently serving token with elevated priority.'}
+                  </span>
+                  <span className="font-bold text-amber-950 font-mono text-[11px]">
+                    Reclaim Target: {currentDept.prefix}-{servingNumber + 2}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Reclaimed Elevated Priority Notice */}
+            {isReclaimed && !isHeld && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-5 p-4 md:p-5 bg-gradient-to-r from-[#1B8B8E]/10 via-[#A6DEF7]/20 to-[#3E36B0]/10 border-2 border-[#1B8B8E] rounded-3xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-[#1B8B8E] text-white rounded-xl shadow-xs shrink-0">
+                    <Zap className="h-5 w-5 text-amber-300 fill-amber-300" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#1B8B8E] uppercase tracking-wider text-[11px] bg-[#1B8B8E]/15 px-2.5 py-0.5 rounded-full border border-[#1B8B8E]/30">
+                        ⚡ {t('elevatedPriority')}
+                      </span>
+                      <span className="font-bold text-[#111111]">
+                        Restored at Slot: <span className="font-mono text-[#3E36B0]">{currentDept.prefix}-{reclaimedEntry.reclaimSlot}</span>
+                      </span>
+                    </div>
+                    <p className="text-[#4B5563] mt-0.5 font-normal">
+                      {t('reclaimedNotice')}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold text-[#1B8B8E] bg-white px-3 py-1.5 rounded-xl border border-[#1B8B8E]/30 shadow-2xs shrink-0">
+                  ~{tokensAhead * currentDept.avgTimePerPatient} mins remaining
+                </span>
+              </motion.div>
+            )}
+
             {/* 4 Essential Metrics of the Live Token Card */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
               {/* Metric 1: Your Token Number - Deep Indigo (#3E36B0) with white text */}
@@ -920,7 +1050,15 @@ export function Dashboard() {
                   {userToken}
                 </span>
                 <span className="inline-block mt-2 bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/20">
-                  {isBeingServed ? '🔔 YOUR TURN' : isPast ? 'COMPLETED' : 'IN QUEUE'}
+                  {isHeld
+                    ? '⏸️ ON HOLD'
+                    : isReclaimed
+                    ? `⚡ ELEVATED (${currentDept.prefix}-${reclaimedEntry.reclaimSlot})`
+                    : isBeingServed
+                    ? '🔔 YOUR TURN'
+                    : isPast
+                    ? 'COMPLETED'
+                    : 'IN QUEUE'}
                 </span>
               </div>
 
@@ -944,10 +1082,14 @@ export function Dashboard() {
                   {isHi ? 'आपके आगे मरीज' : 'TOKENS AHEAD'}
                 </span>
                 <span className="text-3xl font-bold font-mono tracking-tight text-[#111111] block">
-                  {tokensAhead}
+                  {isHeld ? '—' : tokensAhead}
                 </span>
                 <span className="inline-block mt-2 text-[#4B5563] text-[10px] font-normal">
-                  {tokensAhead === 0 ? 'You are next!' : `${tokensAhead} patients waiting`}
+                  {isHeld
+                    ? (isHi ? 'टोकन होल्ड पर है' : 'Token Paused')
+                    : tokensAhead === 0
+                    ? (isHi ? 'आपकी बारी आ गई!' : 'You are next!')
+                    : `${tokensAhead} patients waiting`}
                 </span>
               </div>
 
@@ -957,10 +1099,20 @@ export function Dashboard() {
                   {isHi ? 'अनुमानित प्रतीक्षा' : 'EST. WAIT TIME'}
                 </span>
                 <span className="text-3xl font-bold font-mono tracking-tight text-[#111111] block">
-                  ~{dynamicWaitTime} <span className="text-sm font-normal">min</span>
+                  {isHeld ? (
+                    <span className="text-amber-600 text-xl font-bold">Paused</span>
+                  ) : (
+                    <>
+                      ~{dynamicWaitTime} <span className="text-sm font-normal">min</span>
+                    </>
+                  )}
                 </span>
                 <span className="inline-block mt-2 text-[#4B5563] text-[10px] font-normal">
-                  {currentDept.delayMinutes > 0 ? `Includes +${currentDept.delayMinutes}m delay` : 'On schedule'}
+                  {isHeld
+                    ? (isHi ? 'काउंटर पर वापस आकर रिज्यूम करें' : 'Click "I am Back" to resume')
+                    : currentDept.delayMinutes > 0
+                    ? `Includes +${currentDept.delayMinutes}m delay`
+                    : 'On schedule'}
                 </span>
               </div>
             </div>
@@ -1030,6 +1182,8 @@ export function Dashboard() {
                           className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-md ${
                             step.isCurrent
                               ? 'bg-[#1B8B8E] text-white ring-4 ring-[#A6DEF7] animate-pulse'
+                              : step.isReclaimedSlot
+                              ? 'bg-amber-500 text-white ring-4 ring-amber-300 animate-pulse'
                               : step.isUser
                               ? 'bg-[#3E36B0] text-white ring-4 ring-[#A6DEF7]/60'
                               : step.isCompleted
@@ -1039,6 +1193,8 @@ export function Dashboard() {
                         >
                           {step.isCompleted ? (
                             <CheckCircle2 className="h-5 w-5 text-[#1B8B8E]" />
+                          ) : step.isReclaimedSlot ? (
+                            <Zap className="h-5 w-5 text-white fill-white" />
                           ) : (
                             step.tokenStr.split('-')[1]
                           )}
@@ -1046,14 +1202,26 @@ export function Dashboard() {
 
                         <span
                           className={`mt-2 text-[11px] font-mono font-bold ${
-                            step.isUser ? 'text-[#3E36B0]' : step.isCurrent ? 'text-[#1B8B8E]' : 'text-[#111111]'
+                            step.isReclaimedSlot
+                              ? 'text-amber-700'
+                              : step.isUser
+                              ? 'text-[#3E36B0]'
+                              : step.isCurrent
+                              ? 'text-[#1B8B8E]'
+                              : 'text-[#111111]'
                           }`}
                         >
                           {step.tokenStr}
                         </span>
 
-                        <span className="text-[10px] font-normal text-[#4B5563]">
-                          {step.isCurrent ? 'Serving' : step.isUser ? 'YOUR TOKEN' : `Wait #${idx}`}
+                        <span className="text-[10px] font-semibold text-[#4B5563]">
+                          {step.isCurrent
+                            ? 'Serving'
+                            : step.isReclaimedSlot
+                            ? '⚡ ELEVATED'
+                            : step.isUser
+                            ? 'YOUR TOKEN'
+                            : `Wait #${idx}`}
                         </span>
                       </div>
                     );
@@ -1110,7 +1278,7 @@ export function Dashboard() {
                 : 'Operate the clinic counter simulator below. Clicking buttons reactively updates the Live Token Card and recalculates wait times.'}
             </p>
 
-            {/* Simulator Interactive Buttons - Primary actions in Deep Indigo (#3E36B0) */}
+            {/* Simulator Interactive Buttons - Primary actions */}
             <div className="grid grid-cols-1 gap-3 mt-5">
               {/* Button 1: [ Call Next ] - Deep Indigo (#3E36B0) */}
               <motion.button
@@ -1130,25 +1298,46 @@ export function Dashboard() {
                 <span>[ Call Next ]</span>
               </motion.button>
 
-              {/* Button 2: [ Mark Done ] - Deep Teal (#1B8B8E) */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  markConsultationDone();
-                  toast.info(
-                    isHi
-                      ? 'परामर्श पूर्ण दर्ज किया गया। काउंटर तैयार।'
-                      : 'Consultation marked completed. Counter ready.'
-                  );
-                }}
-                className="w-full bg-[#1B8B8E] hover:bg-[#146B6E] text-white font-bold p-3 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-colors text-sm"
-              >
-                <CheckCircle2 className="h-4 w-4 text-white" />
-                <span>[ Mark Done ]</span>
-              </motion.button>
+              {/* Row with [ Mark Done ] & [ Put On Hold ] */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Button 2: [ Mark Done ] - Deep Teal (#1B8B8E) */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    markConsultationDone();
+                    toast.info(
+                      isHi
+                        ? 'परामर्श पूर्ण दर्ज किया गया। काउंटर तैयार।'
+                        : 'Consultation marked completed. Counter ready.'
+                    );
+                  }}
+                  className="bg-[#1B8B8E] hover:bg-[#146B6E] text-white font-bold p-3 rounded-2xl shadow-sm flex items-center justify-center gap-1.5 transition-colors text-xs sm:text-sm"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-white shrink-0" />
+                  <span>[ Mark Done ]</span>
+                </motion.button>
 
-              {/* Button 3: [ No-Show ] - Deep Charcoal (#111111) */}
+                {/* Requirement 2: Button [ Put On Hold ] - Clinical Amber */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    handlePutOnHold();
+                    toast.warning(
+                      isHi
+                        ? `टोकन ${currentDept.prefix}-${currentDept.nowServing} को होल्ड पर रखा गया। अगला मरीज बुलाया गया।`
+                        : `Token ${currentDept.prefix}-${currentDept.nowServing} put on hold. Calling next patient.`
+                    );
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold p-3 rounded-2xl shadow-sm flex items-center justify-center gap-1.5 transition-colors text-xs sm:text-sm"
+                >
+                  <PauseCircle className="h-4 w-4 text-white shrink-0" />
+                  <span>[ {t('putOnHold')} ]</span>
+                </motion.button>
+              </div>
+
+              {/* Button 4: [ No-Show ] - Deep Charcoal (#111111) */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1166,7 +1355,7 @@ export function Dashboard() {
                 <span>[ No-Show ]</span>
               </motion.button>
 
-              {/* Button 4: [ Doctor Delayed (+5 mins) ] */}
+              {/* Button 5: [ Doctor Delayed (+5 mins) ] */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1183,6 +1372,86 @@ export function Dashboard() {
                 <Clock className="h-4 w-4 text-amber-700" />
                 <span>[ Doctor Delayed (+5 mins) ]</span>
               </motion.button>
+            </div>
+
+            {/* ─── Requirement 2: Dedicated "Held Patients / On-Hold Drawer" ─── */}
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <PauseCircle className="h-4 w-4 text-amber-600" />
+                  <span className="text-xs font-bold text-[#111111] uppercase tracking-wider">
+                    {t('heldPatientsDrawer')}
+                  </span>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                    heldTokens.length > 0
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {heldTokens.length} {isHi ? 'होल्ड पर' : 'PAUSED'}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#4B5563] mb-3">
+                {t('heldDrawerSubtitle')}
+              </p>
+
+              {heldTokens.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-[#F8FAFC] border border-dashed border-slate-200 text-center text-xs text-[#4B5563]">
+                  <Inbox className="h-5 w-5 text-slate-400 mx-auto mb-1.5" />
+                  <span>{t('noHeldPatients')}</span>
+                </div>
+              ) : (
+                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                  {heldTokens.map((held) => (
+                    <div
+                      key={held.id}
+                      className="p-3 rounded-2xl bg-amber-50/90 border border-amber-300 text-xs flex flex-col gap-2 shadow-2xs hover:border-amber-400 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-sm text-[#111111]">
+                            {held.tokenCode}
+                          </span>
+                          <span className="text-[10px] font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full border border-amber-400/50">
+                            {held.priorityTag}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-amber-800 font-mono font-medium">
+                          {held.heldAt}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-amber-900/80 italic leading-snug">
+                        {held.reason}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-1.5 border-t border-amber-200/80">
+                        <span className="text-[10px] text-slate-600 font-medium">
+                          Admit to: <strong className="text-[#3E36B0] font-mono">{currentDept.prefix}-{servingNumber + 2}</strong>
+                        </span>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            handleReclaimQueue(held.tokenCode);
+                            toast.success(
+                              isHi
+                                ? `टोकन ${held.tokenCode} को कतार में पुनः सम्मिलित किया गया (स्लॉट ${currentDept.prefix}-${servingNumber + 2})`
+                                : `Admitted ${held.tokenCode} back to line at slot ${currentDept.prefix}-${servingNumber + 2}`
+                            );
+                          }}
+                          className="bg-[#1B8B8E] hover:bg-[#146B6E] text-white font-bold px-3 py-1.5 rounded-xl text-[11px] shadow-xs flex items-center gap-1.5 transition-colors"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          <span>{t('admitBack')}</span>
+                        </motion.button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Live Counter Event Log */}

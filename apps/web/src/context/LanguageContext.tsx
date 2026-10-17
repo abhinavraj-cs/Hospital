@@ -49,7 +49,19 @@ const translations: Record<Language, Record<string, string>> = {
     countersUnit: 'active',
     meanWaitTime: 'Mean Waiting Time',
     meanWaitTimeSub: 'Dynamic real-time estimate',
-    minsUnit: 'mins'
+    minsUnit: 'mins',
+
+    // On-Hold & Backtracking
+    onHoldTitle: 'Token Paused / On Hold',
+    onHoldMessage: 'Your token was called while you were away from the counter. Your spot is preserved. Click below when you return to get re-admitted 2 slots behind the currently serving token.',
+    iAmBack: 'I am Back at the Counter (मैं काउंटर पर वापस आ गया हूँ)',
+    putOnHold: 'Put On Hold',
+    heldPatientsDrawer: 'Held Patients / On-Hold Drawer',
+    heldDrawerSubtitle: 'Unresponsive patients on pause (stepped away)',
+    admitBack: 'Admit Back to Line',
+    noHeldPatients: 'No patients currently on hold. Queue is running smoothly.',
+    reclaimedNotice: 'Queue position restored 2 slots behind currently serving with elevated priority.',
+    elevatedPriority: 'Elevated Priority'
   },
   hi: {
     // Navigation
@@ -89,7 +101,19 @@ const translations: Record<Language, Record<string, string>> = {
     countersUnit: 'सक्रिय',
     meanWaitTime: 'औसत प्रतीक्षा समय',
     meanWaitTimeSub: 'गतिशील लाइव अनुमान',
-    minsUnit: 'मिनट'
+    minsUnit: 'मिनट',
+
+    // On-Hold & Backtracking
+    onHoldTitle: 'टोकन रोका गया / ऑन-होल्ड',
+    onHoldMessage: 'जब आपका टोकन बुलाया गया था तब आप काउंटर पर उपस्थित नहीं थे। आपकी बारी सुरक्षित रखी गई है। कतार में पुनः सम्मिलित होने के लिए नीचे दिए गए बटन पर क्लिक करें।',
+    iAmBack: 'मैं काउंटर पर वापस आ गया हूँ (I am Back at the Counter)',
+    putOnHold: 'होल्ड पर रखें',
+    heldPatientsDrawer: 'होल्ड पर रखे गए मरीज (ऑन-होल्ड ड्रॉअर)',
+    heldDrawerSubtitle: 'अनुपस्थित मरीज जिनका टोकन सुरक्षित रूप से रोका गया है',
+    admitBack: 'कतार में वापस लें',
+    noHeldPatients: 'वर्तमान में कोई मरीज होल्ड पर नहीं है। कतार सामान्य रूप से चल रही है।',
+    reclaimedNotice: 'कतार स्थिति बहाल: वर्तमान सेवा टोकन के 2 स्थान पीछे उच्च प्राथमिकता के साथ जोड़ा गया।',
+    elevatedPriority: 'उच्च प्राथमिकता'
   }
 };
 

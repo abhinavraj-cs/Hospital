@@ -263,7 +263,7 @@ model MultiLevelToken {
   level         String     // LV1_PATIENT, LV2_DOCTOR, LV3_PHARMACY, LV4_LAB_TEST, LV5_LAB_REPORT
   tokenCode     String     @unique // e.g. PAT-101, DOC-201, PH-301, LAB-401, REP-501
   tokenNumber   Int        // e.g. 101, 201, 301, 401, 501
-  status        String     @default("WAITING") // WAITING, CALLED, IN_PROGRESS, COMPLETED, SKIPPED, CANCELLED
+  status        String     @default("WAITING") // WAITING, CALLED, IN_PROGRESS, ON_HOLD, COMPLETED, SKIPPED, CANCELLED
   departmentId  String?
   doctorId      String?
   notes         String?

@@ -14,6 +14,7 @@ export type TokenStatus =
   | 'WAITING' 
   | 'CALLED' 
   | 'IN_PROGRESS' 
+  | 'ON_HOLD'
   | 'COMPLETED' 
   | 'SKIPPED' 
   | 'CANCELLED';

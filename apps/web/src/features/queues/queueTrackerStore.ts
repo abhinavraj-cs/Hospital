@@ -27,12 +27,24 @@ export interface QueueLogEntry {
   type: 'call' | 'done' | 'noshow' | 'delay' | 'new';
 }
 
+export interface HeldToken {
+  id: string;
+  tokenCode: string; // e.g. "OPD-101"
+  deptId: string;    // e.g. "opd"
+  heldAt: string;    // timestamp e.g. "12:15 PM"
+  reason: string;    // "Unresponsive at Counter (Stepped Away)"
+  priorityTag: 'ELEVATED' | 'HIGH';
+  originalServingNum: number;
+}
+
 interface QueueTrackerState {
   roleView: RoleViewMode;
   language: LanguageCode;
   selectedDeptId: string;
   userToken: string; // e.g. "OPD-104"
   departments: Record<string, DepartmentQueue>;
+  heldTokens: HeldToken[];
+  reclaimedTokens: Record<string, { reclaimSlot: number; priority: string; originalNum: number }>;
   logs: QueueLogEntry[];
   isAnnouncing: boolean;
   lastAnnouncement: string;
@@ -47,6 +59,8 @@ interface QueueTrackerState {
   callNextToken: () => void;
   markConsultationDone: () => void;
   markNoShow: () => void;
+  handlePutOnHold: (tokenId?: string) => void;
+  handleReclaimQueue: (tokenId: string) => void;
   addDoctorDelay: (minutes?: number) => void;
   speakQueueStatus: () => void;
   resetToDefault: () => void;
@@ -152,6 +166,18 @@ export const useQueueTrackerStore = create<QueueTrackerState>()(
       selectedDeptId: 'opd',
       userToken: 'OPD-104',
       departments: initialDepartments,
+      heldTokens: [
+        {
+          id: 'held-demo-1',
+          tokenCode: 'OPD-100',
+          deptId: 'opd',
+          heldAt: '12:08 PM',
+          reason: 'Unresponsive at Counter (Stepped Away)',
+          priorityTag: 'ELEVATED',
+          originalServingNum: 100,
+        },
+      ],
+      reclaimedTokens: {},
       isAnnouncing: false,
       lastAnnouncement: '',
       logs: [
@@ -342,6 +368,133 @@ export const useQueueTrackerStore = create<QueueTrackerState>()(
         playHospitalDingDong();
       },
 
+      handlePutOnHold: (tokenId?: string) => {
+        const state = get();
+        const { selectedDeptId, departments } = state;
+        const dept = departments[selectedDeptId] || departments.opd;
+
+        const targetToken = tokenId || `${dept.prefix}-${dept.nowServing}`;
+        const parts = targetToken.split('-');
+        const targetNum = parseInt(parts[1] || String(dept.nowServing), 10);
+
+        // Advance to next token automatically
+        const nextServing = dept.nowServing + 1;
+        const newWaiting = Math.max(0, dept.waitingCount - 1);
+        const nextToken = `${dept.prefix}-${nextServing}`;
+
+        const newHeldEntry: HeldToken = {
+          id: 'held-' + Date.now(),
+          tokenCode: targetToken,
+          deptId: selectedDeptId,
+          heldAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          reason: 'Unresponsive at Counter (Stepped Away)',
+          priorityTag: 'ELEVATED',
+          originalServingNum: targetNum,
+        };
+
+        const isHi = state.language === 'hi';
+        const holdMsgEn = `Token ${targetToken} put ON HOLD (unresponsive). Calling next patient ${nextToken}.`;
+        const holdMsgHi = `टोकन ${targetToken} को होल्ड पर रखा गया है। अगले मरीज ${nextToken} को बुलाया जा रहा है।`;
+
+        set((s) => ({
+          heldTokens: [newHeldEntry, ...s.heldTokens.filter((h) => h.tokenCode !== targetToken)],
+          departments: {
+            ...s.departments,
+            [selectedDeptId]: {
+              ...s.departments[selectedDeptId],
+              nowServing: nextServing,
+              waitingCount: newWaiting,
+            },
+          },
+          logs: [
+            {
+              id: 'log-' + Date.now(),
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              message: holdMsgEn,
+              type: 'delay',
+            },
+            ...s.logs.slice(0, 19),
+          ],
+        }));
+
+        playHospitalDingDong();
+
+        // Bilingual Audio Announcement
+        if ('speechSynthesis' in window) {
+          const announcement = isHi ? holdMsgHi : holdMsgEn;
+          setTimeout(() => {
+            try {
+              window.speechSynthesis.cancel();
+              const utt = new SpeechSynthesisUtterance(announcement);
+              utt.lang = isHi ? 'hi-IN' : 'en-US';
+              utt.rate = 0.95;
+              window.speechSynthesis.speak(utt);
+            } catch {}
+          }, 400);
+        }
+      },
+
+      handleReclaimQueue: (tokenId: string) => {
+        const cleanToken = tokenId.trim().toUpperCase();
+        const state = get();
+        const { selectedDeptId, departments, heldTokens } = state;
+        const dept = departments[selectedDeptId] || departments.opd;
+
+        const held = heldTokens.find((h) => h.tokenCode === cleanToken);
+        const originalNum = held?.originalServingNum || parseInt(cleanToken.split('-')[1] || '100', 10);
+
+        // Reclaim rule: re-insert 2 slots behind currently serving patient
+        const reclaimSlot = dept.nowServing + 2;
+
+        const isHi = state.language === 'hi';
+        const reclaimMsgEn = `Token ${cleanToken} returned to counter. Re-admitted at slot ${dept.prefix}-${reclaimSlot} with ELEVATED priority.`;
+        const reclaimMsgHi = `टोकन ${cleanToken} काउंटर पर वापस आ गए हैं। उन्हें उच्च प्राथमिकता के साथ स्लॉट ${dept.prefix}-${reclaimSlot} पर पुनः कतार में जोड़ा गया है।`;
+
+        set((s) => ({
+          heldTokens: s.heldTokens.filter((h) => h.tokenCode !== cleanToken),
+          reclaimedTokens: {
+            ...s.reclaimedTokens,
+            [cleanToken]: {
+              reclaimSlot,
+              priority: 'ELEVATED',
+              originalNum,
+            },
+          },
+          departments: {
+            ...s.departments,
+            [selectedDeptId]: {
+              ...s.departments[selectedDeptId],
+              waitingCount: s.departments[selectedDeptId].waitingCount + 1,
+            },
+          },
+          logs: [
+            {
+              id: 'log-' + Date.now(),
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              message: reclaimMsgEn,
+              type: 'new',
+            },
+            ...s.logs.slice(0, 19),
+          ],
+        }));
+
+        playHospitalDingDong();
+
+        // Bilingual Audio Announcement
+        if ('speechSynthesis' in window) {
+          const announcement = isHi ? reclaimMsgHi : reclaimMsgEn;
+          setTimeout(() => {
+            try {
+              window.speechSynthesis.cancel();
+              const utt = new SpeechSynthesisUtterance(announcement);
+              utt.lang = isHi ? 'hi-IN' : 'en-US';
+              utt.rate = 0.95;
+              window.speechSynthesis.speak(utt);
+            } catch {}
+          }, 400);
+        }
+      },
+
       addDoctorDelay: (minutes = 5) => {
         const { selectedDeptId, departments } = get();
         const dept = departments[selectedDeptId] || departments.opd;
@@ -382,9 +535,21 @@ export const useQueueTrackerStore = create<QueueTrackerState>()(
         set({ isAnnouncing: true });
 
         const isHi = state.language === 'hi';
+        const isUserHeld = state.heldTokens.some((h) => h.tokenCode === state.userToken);
+        const reclaimedData = state.reclaimedTokens[state.userToken];
         let announcement = '';
 
-        if (tokensAhead <= 0) {
+        if (isUserHeld) {
+          announcement = isHi
+            ? `कृपया ध्यान दें। आपका टोकन ${state.userToken} अनुपस्थित होने के कारण होल्ड पर रखा गया है। कतार में पुनः सम्मिलित होने के लिए 'मैं काउंटर पर वापस आ गया हूँ' बटन दबाएं।`
+            : `Attention please. Your token ${state.userToken} is currently on hold. Please click 'I am Back at the Counter' to rejoin the queue.`;
+        } else if (reclaimedData) {
+          const reclaimAhead = Math.max(0, reclaimedData.reclaimSlot - currentServing);
+          const reclaimWait = reclaimAhead * dept.avgTimePerPatient + (dept.delayMinutes || 0);
+          announcement = isHi
+            ? `कृपया ध्यान दें। आपका टोकन ${state.userToken} उच्च प्राथमिकता के साथ स्लॉट ${dept.prefix} ${reclaimedData.reclaimSlot} पर पुनः कतार में जोड़ा गया है। आपकी बारी आने में लगभग ${reclaimWait} मिनट शेष हैं।`
+            : `Attention please. Your token ${state.userToken} has been re-admitted with elevated priority at slot ${dept.prefix}-${reclaimedData.reclaimSlot}. Estimated wait time is approximately ${reclaimWait} minutes.`;
+        } else if (tokensAhead <= 0) {
           announcement = isHi
             ? `कृपया ध्यान दें। आपका टोकन ${state.userToken} अभी बुलाया जा चुका है। कृपया ${dept.room.hi} में तुरंत संपर्क करें।`
             : `Attention please. Your token ${state.userToken} is now being served. Please proceed immediately to ${dept.room.en}.`;
@@ -420,6 +585,18 @@ export const useQueueTrackerStore = create<QueueTrackerState>()(
           departments: initialDepartments,
           userToken: 'OPD-104',
           selectedDeptId: 'opd',
+          heldTokens: [
+            {
+              id: 'held-demo-1',
+              tokenCode: 'OPD-100',
+              deptId: 'opd',
+              heldAt: '12:08 PM',
+              reason: 'Unresponsive at Counter (Stepped Away)',
+              priorityTag: 'ELEVATED',
+              originalServingNum: 100,
+            },
+          ],
+          reclaimedTokens: {},
           logs: [
             {
               id: 'log-' + Date.now(),

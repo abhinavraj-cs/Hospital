@@ -50,7 +50,7 @@ export class RegisterPatientTokenDto {
 
 export class UpdateTokenStatusDto {
   @IsString()
-  status: string; // WAITING, CALLED, IN_PROGRESS, COMPLETED, SKIPPED, CANCELLED
+  status: string; // WAITING, CALLED, IN_PROGRESS, ON_HOLD, COMPLETED, SKIPPED, CANCELLED
 
   @IsOptional()
   @IsString()
