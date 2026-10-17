@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
-import { QueueEntryStatus } from '@prisma/client';
-import { SocketEvents } from '@hospital-nav/shared-types';
+import { SocketEvents, QueueEntryStatus } from '@hospital-nav/shared-types';
 
 export interface QueueReceiptData {
   receiptId: string;

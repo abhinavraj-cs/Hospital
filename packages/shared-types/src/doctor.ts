@@ -8,6 +8,8 @@ export enum DoctorStatus {
   IN_CONSULTATION = 'IN_CONSULTATION',
   UNAVAILABLE = 'UNAVAILABLE',
   EMERGENCY = 'EMERGENCY',
+  ON_LEAVE = 'ON_LEAVE',
+  BUSY = 'BUSY',
 }
 
 export interface Doctor {

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
-import { Prisma, Doctor, DoctorStatus } from '@prisma/client';
-import { SocketEvents } from '@hospital-nav/shared-types';
+import { Prisma, Doctor } from '@prisma/client';
+import { SocketEvents, DoctorStatus } from '@hospital-nav/shared-types';
 
 @Injectable()
 export class DoctorsService {

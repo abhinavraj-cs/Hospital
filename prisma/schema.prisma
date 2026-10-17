@@ -3,62 +3,21 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  DOCTOR
-  STAFF
-  PATIENT
-}
 
-enum DoctorStatus {
-  AVAILABLE
-  ON_LEAVE
-  BUSY
-}
 
-enum DepartmentCategory {
-  EMERGENCY
-  CLINICAL
-  DIAGNOSTIC
-  SURGICAL
-  SUPPORT
-}
 
-enum RoomType {
-  CONSULTATION
-  WARD
-  ICU
-  OT
-  LAB
-}
 
-enum NodeType {
-  ENTRANCE
-  CORRIDOR
-  ELEVATOR
-  STAIRS
-  DEPARTMENT
-  ROOM
-  RESTROOM
-  EMERGENCY
-  STAIR
-  ESCALATOR
-  EXIT
-  INTERSECTION
-}
 
-enum QueueEntryStatus {
-  WAITING
-  CALLED
-  COMPLETED
-  SKIPPED
-  CANCELLED
-}
+
+
+
+
+
+
 
 model User {
   id            String    @id @default(uuid())
@@ -66,7 +25,7 @@ model User {
   email         String    @unique
   phone         String?   @unique
   passwordHash  String
-  role          UserRole
+  role          String
   refreshToken  String?
   patient       Patient?
   doctor        Doctor?
@@ -79,6 +38,7 @@ model Patient {
   userId     String       @unique
   user       User         @relation(fields: [userId], references: [id])
   queueEntry QueueEntry[]
+  encounters Encounter[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 }
@@ -128,11 +88,12 @@ model Department {
   floor      Floor              @relation(fields: [floorId], references: [id])
   name       String
   code       String
-  category   DepartmentCategory
+  category   String
   rooms            Room[]
   doctors          Doctor[]
   queues           Queue[]
   navigationNodes  NavigationNode[]
+  encounters       Encounter[]
   createdAt        DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
 }
@@ -145,7 +106,7 @@ model Room {
   department   Department? @relation(fields: [departmentId], references: [id])
   roomNumber   String      @unique
   name         String
-  type         RoomType
+  type         String
   doctors      Doctor[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -161,10 +122,11 @@ model Doctor {
   department         Department   @relation(fields: [departmentId], references: [id])
   roomId             String?
   room               Room?        @relation(fields: [roomId], references: [id])
-  availabilityStatus DoctorStatus
+  availabilityStatus String
   consultationStart  String
   consultationEnd    String
   queues             Queue[]
+  encounters         Encounter[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 }
@@ -191,7 +153,7 @@ model QueueEntry {
   patientId   String
   patient     Patient          @relation(fields: [patientId], references: [id])
   tokenNumber Int
-  status      QueueEntryStatus @default(WAITING)
+  status      String @default("WAITING")
   calledAt    DateTime?
   completedAt DateTime?
   createdAt   DateTime         @default(now())
@@ -206,7 +168,7 @@ model NavigationNode {
   department   Department?      @relation(fields: [departmentId], references: [id])
   x            Float
   y            Float
-  nodeType     NodeType
+  nodeType     String
   label        String?
   accessible   Boolean          @default(true)
   roomId       String?
@@ -271,3 +233,88 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Encounter {
+  id              String            @id @default(uuid())
+  encounterNumber String            @unique
+  patientId       String
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  doctorId        String?
+  doctor          Doctor?           @relation(fields: [doctorId], references: [id])
+  departmentId    String?
+  department      Department?       @relation(fields: [departmentId], references: [id])
+  status          String            @default("ACTIVE")
+  currentLevel    String            @default("LV1_PATIENT")
+  priority        String            @default("NORMAL")
+  chiefComplaint  String?
+  diagnosis       String?
+  tokens          MultiLevelToken[]
+  prescriptions   Prescription[]
+  labRequests     LabTestRequest[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model MultiLevelToken {
+  id            String     @id @default(uuid())
+  encounterId   String
+  encounter     Encounter  @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  patientId     String
+  level         String     // LV1_PATIENT, LV2_DOCTOR, LV3_PHARMACY, LV4_LAB_TEST, LV5_LAB_REPORT
+  tokenCode     String     @unique // e.g. PAT-101, DOC-201, PH-301, LAB-401, REP-501
+  tokenNumber   Int        // e.g. 101, 201, 301, 401, 501
+  status        String     @default("WAITING") // WAITING, CALLED, IN_PROGRESS, COMPLETED, SKIPPED, CANCELLED
+  departmentId  String?
+  doctorId      String?
+  notes         String?
+  parentTokenId String?
+  calledAt      DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Prescription {
+  id           String     @id @default(uuid())
+  encounterId  String
+  encounter    Encounter  @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  medicines    String     // JSON array of medicines or text
+  instructions String?
+  status       String     @default("PENDING") // PENDING, DISPENSED
+  dispensedAt  DateTime?
+  dispensedBy  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model LabTestRequest {
+  id           String     @id @default(uuid())
+  encounterId  String
+  encounter    Encounter  @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  testName     String
+  testCategory String?
+  status       String     @default("PENDING") // PENDING, SAMPLE_COLLECTED, PROCESSING, COMPLETED, CANCELLED
+  sampleType   String?
+  collectedAt  DateTime?
+  completedAt  DateTime?
+  report       LabReport?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model LabReport {
+  id               String         @id @default(uuid())
+  labTestRequestId String         @unique
+  labTestRequest   LabTestRequest @relation(fields: [labTestRequestId], references: [id], onDelete: Cascade)
+  reportTokenCode  String?
+  summary          String
+  results          String
+  status           String         @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, VERIFIED, DELIVERED
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+

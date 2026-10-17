@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { DepartmentCategory } from '@prisma/client';
+import { DepartmentCategory } from '@hospital-nav/shared-types';
 
 export class CreateDepartmentDto {
   @IsString()

@@ -9,6 +9,7 @@ export enum QueueEntryStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   NO_SHOW = 'NO_SHOW',
+  SKIPPED = 'SKIPPED',
 }
 
 export interface Queue {

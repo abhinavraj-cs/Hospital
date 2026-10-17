@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } f
 import { DoctorsService } from './doctors.service';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole, DoctorStatus } from '@prisma/client';
+import { UserRole, DoctorStatus } from '@hospital-nav/shared-types';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 class UpdateDoctorStatusDto {

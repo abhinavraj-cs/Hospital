@@ -19,6 +19,8 @@ import { QueueStatusPage } from '../features/queues/QueueStatusPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { AdminDashboard } from '../features/admin/AdminDashboard';
 import { PatientDashboard } from '../features/patient/PatientDashboard';
+import { MultiLevelQueueHub } from '../features/multi-queue/MultiLevelQueueHub';
+import Navbar from '@/components/Navbar';
 
 // ─── Role Dashboard Path Helper ───────────────────────────────────────────────
 function getRoleDashboardPath(role: string): string {
@@ -36,9 +38,14 @@ function getRoleDashboardPath(role: string): string {
   }
 }
 
+import { useQueueTrackerStore } from '../features/queues/queueTrackerStore';
+import { useLanguage } from '../context/LanguageContext';
+
 // ─── Root Layout ─────────────────────────────────────────────────────────────
 const RootLayout = () => {
   const { isAuthenticated, user, tokens, _hasHydrated } = useAuthStore();
+  const { roleView, setRoleView, language, setLanguage } = useQueueTrackerStore();
+  const { lang, setLang, t } = useLanguage();
 
   // Connect Socket.IO on auth state change
   useEffect(() => {
@@ -62,58 +69,7 @@ const RootLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/50 text-slate-900 font-sans antialiased flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
-        <div className="container flex h-16 items-center px-4 mx-auto justify-between max-w-7xl">
-          <a className="flex items-center space-x-2 shrink-0" href={isAuthenticated && user ? getRoleDashboardPath(user.role) : '/'}>
-            <img src="/logo-white.png" alt="ArogyaMitra Logo" className="w-10 h-10 rounded-lg object-cover shadow-sm" />
-            <span className="font-bold text-xl tracking-tight text-slate-900">ArogyaMitra</span>
-          </a>
-
-          <nav className="hidden md:flex items-center gap-6">
-            {/* Role-specific Dashboard Link */}
-            {isAuthenticated && user ? (
-              <>
-                {user.role === 'PATIENT' && (
-                  <NavLink to="/patient" className={navCls}>My Dashboard</NavLink>
-                )}
-                {user.role === 'DOCTOR' && (
-                  <NavLink to="/doctor" className={navCls}>My Dashboard</NavLink>
-                )}
-                {(user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && (
-                  <NavLink to="/admin" className={navCls}>Admin Panel</NavLink>
-                )}
-              </>
-            ) : (
-              <NavLink to="/" end className={navCls}>Home</NavLink>
-            )}
-            <NavLink to="/doctors" className={navCls}>Doctors</NavLink>
-            <NavLink to="/navigate" className={navCls}>Map</NavLink>
-            <NavLink to="/search" className={navCls}>Search</NavLink>
-            <NavLink to="/emergency" className={navCls}>Emergency</NavLink>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            {isAuthenticated && user ? (
-              <NavLink
-                to="/profile"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-sm font-medium text-slate-700"
-              >
-                <div className="w-6 h-6 rounded-full bg-sky-500 text-white flex items-center justify-center text-xs font-bold">
-                  {user.name?.[0] || '?'}
-                </div>
-                {user.name?.split(' ')[0]}
-              </NavLink>
-            ) : (
-              <NavLink
-                to="/login"
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 rounded-full text-white text-sm font-medium transition-all shadow-sm"
-              >
-                Sign In
-              </NavLink>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1 p-4 md:p-8 w-full max-w-7xl mx-auto relative z-10">
         <ErrorBoundary>
@@ -256,6 +212,8 @@ const router = createBrowserRouter([
       { path: 'doctors', element: <DoctorsPage /> },
       { path: 'doctors/:id', element: <DoctorDetailPage /> },
       { path: 'queue/:id', element: <QueueStatusPage /> },
+      { path: 'multi-queue', element: <MultiLevelQueueHub /> },
+      { path: 'queue-system', element: <MultiLevelQueueHub /> },
       
       // Protected profile route (any authenticated user)
       {

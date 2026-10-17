@@ -142,3 +142,43 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
 };
+
+// ─── Multi-Level Queue & Token System (LV1 -> LV5) ───────────────────────────
+export const multiQueueApi = {
+  getOverviewStats: () => request<any>('/multi-queue/stats'),
+  getEncounters: () => request<any[]>('/multi-queue/encounters'),
+  getEncounterById: (id: string) => request<any>(`/multi-queue/encounter/${id}`),
+  trackToken: (code: string) => request<any>(`/multi-queue/track/${encodeURIComponent(code)}`),
+  getStageQueue: (stage: string) => request<any>(`/multi-queue/stage/${stage}`),
+  registerPatient: (data: {
+    patientName: string;
+    phone?: string;
+    age?: number;
+    gender?: string;
+    symptoms?: string;
+    doctorId: string;
+    isEmergency?: boolean;
+    existingPatientId?: string;
+  }) => request<any>('/multi-queue/register', { method: 'POST', body: JSON.stringify(data) }),
+  updateTokenStatus: (tokenId: string, data: { status: string; notes?: string }) =>
+    request<any>(`/multi-queue/token/${tokenId}/status`, { method: 'POST', body: JSON.stringify(data) }),
+  processDoctorConsultation: (encounterId: string, data: {
+    diagnosis: string;
+    notes?: string;
+    prescribeMedications?: Array<{ name: string; dosage: string; frequency: string; duration: string }>;
+    orderLabTests?: Array<{ testName: string; category?: string; sampleType?: string }>;
+    dischargeImmediately?: boolean;
+  }) => request<any>(`/multi-queue/consultation/${encounterId}`, { method: 'POST', body: JSON.stringify(data) }),
+  dispensePharmacy: (prescriptionId: string, data?: { instructions?: string }) =>
+    request<any>(`/multi-queue/pharmacy/dispense/${prescriptionId}`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    }),
+  collectLabSample: (requestId: string) =>
+    request<any>(`/multi-queue/lab/collect-sample/${requestId}`, { method: 'POST' }),
+  completeLabTest: (requestId: string) =>
+    request<any>(`/multi-queue/lab/complete-test/${requestId}`, { method: 'POST' }),
+  verifyLabReport: (reportId: string, data: { summary: string; results: string; verifiedBy?: string }) =>
+    request<any>(`/multi-queue/lab/verify-report/${reportId}`, { method: 'POST', body: JSON.stringify(data) }),
+};
+

@@ -39,6 +39,7 @@ export enum DepartmentCategory {
   EMERGENCY = 'EMERGENCY',
   SUPPORT = 'SUPPORT',
   ADMINISTRATIVE = 'ADMINISTRATIVE',
+  SURGICAL = 'SURGICAL',
 }
 
 export interface Department {
@@ -65,6 +66,8 @@ export enum RoomType {
   ICU = 'ICU',
   WARD = 'WARD',
   OFFICE = 'OFFICE',
+  OT = 'OT',
+  LAB = 'LAB',
 }
 
 export interface Room {

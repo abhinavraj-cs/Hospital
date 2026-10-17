@@ -3,7 +3,7 @@ import { QrLocationService } from './qr-location.service';
 import { CreateQrLocationDto, UpdateQrLocationDto, ScanQrDto } from './dto/qr-location.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@hospital-nav/shared-types';
 
 @Controller('qr')
 export class QrLocationController {

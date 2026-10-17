@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { RoomType } from '@prisma/client';
+import { RoomType } from '@hospital-nav/shared-types';
 
 export class CreateRoomDto {
   @IsString()

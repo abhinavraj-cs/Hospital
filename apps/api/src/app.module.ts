@@ -14,9 +14,9 @@ import { NavigationModule } from './navigation/navigation.module';
 import { QueuesModule } from './queues/queues.module';
 import { QrLocationModule } from './qr-location/qr-location.module';
 import { EmergencyModule } from './emergency/emergency.module';
-// Removed missing modules
 import { RealtimeModule } from './realtime/realtime.module';
 import { AdminModule } from './admin/admin.module';
+import { MultiQueueModule } from './multi-queue/multi-queue.module';
 
 @Module({
   imports: [
@@ -51,6 +51,7 @@ import { AdminModule } from './admin/admin.module';
     // Realtime & Health
     RealtimeModule,
     AdminModule,
+    MultiQueueModule,
   ],
   providers: [
     {

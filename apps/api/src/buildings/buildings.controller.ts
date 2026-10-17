@@ -3,7 +3,7 @@ import { BuildingsService } from './buildings.service';
 import { CreateBuildingDto, UpdateBuildingDto } from './dto/building.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@hospital-nav/shared-types';
 
 @Controller('buildings')
 export class BuildingsController {
