@@ -99,14 +99,14 @@ export function Navbar() {
             Search
           </NavLink>
           <NavLink to="/emergency" className={({ isActive }) => 
-            `text-sm font-bold flex items-center gap-1 px-3 py-1 rounded-xl transition-all ${
+            `text-sm font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
               isActive
-                ? 'bg-[#F62088] text-white shadow-sm'
-                : 'text-[#F62088] hover:bg-[#F62088]/10'
+                ? 'bg-[#DC2626] text-white shadow-xs'
+                : 'bg-red-50 text-[#DC2626] hover:bg-red-100 border border-red-200/80'
             }`
           }>
-            <span className="w-2 h-2 rounded-full bg-[#F62088] animate-ping inline-block"></span>
-            {t('emergency')}
+            <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse inline-block"></span>
+            <span>{t('emergency')}</span>
           </NavLink>
         </nav>
 

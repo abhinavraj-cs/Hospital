@@ -15,9 +15,10 @@
   --color-charcoal-body: #111111;
   --color-charcoal-muted: #4B5563;
 
-  --color-magenta-emergency: #F62088;
-  --color-magenta-dark: #D81473;
-  --color-magenta-soft: #FDF2F7;
+  --color-emergency-red: #DC2626;
+  --color-emergency-dark: #B91C1C;
+  --color-emergency-soft: #FEF2F2;
+  --color-emergency-border: #FCA5A5;
 
   --color-teal-status: #1B8B8E;
   --color-teal-dark: #146B6E;
@@ -97,9 +98,9 @@ p, span, div, label, input, button {
   box-shadow: 0 4px 18px rgba(0, 43, 255, 0.4);
 }
 
-/* Emergency Vivid Magenta alert */
+/* Emergency Medical Red alert */
 .badge-emergency {
-  background-color: #F62088;
+  background-color: #DC2626;
   color: #FFFFFF;
   font-weight: 700;
 }

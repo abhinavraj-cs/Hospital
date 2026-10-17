@@ -315,7 +315,7 @@ export const MultiLevelQueueHub: React.FC = () => {
             { level: 'LV2', name: 'Doctor OPD', prefix: '201..', count: stats?.levels?.LV2_DOCTOR?.waiting || 0, color: 'bg-[#A6DEF7]/20 text-white border-[#A6DEF7]/40', icon: Stethoscope },
             { level: 'LV3', name: 'Pharmacy', prefix: '301..', count: stats?.levels?.LV3_PHARMACY?.waiting || 0, color: 'bg-white/10 text-white border-white/20', icon: Pill },
             { level: 'LV4', name: 'Lab Test', prefix: '401..', count: stats?.levels?.LV4_LAB_TEST?.waiting || 0, color: 'bg-[#A6DEF7]/20 text-white border-[#A6DEF7]/40', icon: FlaskConical },
-            { level: 'LV5', name: 'Lab Report', prefix: '501..', count: stats?.levels?.LV5_LAB_REPORT?.waiting || 0, color: 'bg-[#F62088]/30 text-white border-[#F62088]/40', icon: FileCheck },
+            { level: 'LV5', name: 'Lab Report', prefix: '501..', count: stats?.levels?.LV5_LAB_REPORT?.waiting || 0, color: 'bg-[#1B8B8E]/30 text-white border-[#1B8B8E]/40', icon: FileCheck },
           ].map((item, idx) => (
             <div key={idx} className={`p-3 rounded-2xl border ${item.color} backdrop-blur-xs flex items-center justify-between`}>
               <div>

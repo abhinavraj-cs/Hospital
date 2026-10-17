@@ -128,7 +128,7 @@ export function Dashboard() {
         {/* TV Header Bar - Deep Indigo with white text */}
         <div className="bg-[#3E36B0] text-white p-6 rounded-2xl md:rounded-3xl shadow-[0_8px_30px_rgba(62,54,176,0.25)] flex flex-col md:flex-row justify-between items-center gap-4 border border-[#A6DEF7]/30">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#F62088] rounded-2xl animate-pulse shadow-md">
+            <div className="p-3 bg-[#DC2626] rounded-2xl animate-pulse shadow-md">
               <Radio className="h-7 w-7 text-white" />
             </div>
             <div>
@@ -259,8 +259,8 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Emergency Notice Banner - Vivid Magenta with white bold text */}
-        <div className="p-5 bg-[#F62088] text-white rounded-2xl md:rounded-3xl flex items-center justify-between shadow-[0_8px_30px_rgba(246,32,136,0.3)] border-2 border-[#F62088]">
+        {/* Emergency Notice Banner - Medical Emergency Red (#DC2626) with white bold text */}
+        <div className="p-5 bg-[#DC2626] text-white rounded-2xl md:rounded-3xl flex items-center justify-between shadow-[0_8px_30px_rgba(220,38,38,0.3)] border-2 border-red-700">
           <div className="flex items-center gap-3">
             <ShieldAlert className="h-8 w-8 text-white shrink-0 animate-bounce" />
             <div>
@@ -278,7 +278,7 @@ export function Dashboard() {
           </div>
           <button
             onClick={() => navigate('/emergency')}
-            className="bg-white text-[#F62088] hover:bg-slate-100 px-5 py-2.5 rounded-2xl font-bold text-sm tracking-wide shrink-0 transition-all shadow-md active:scale-95"
+            className="bg-white text-[#DC2626] hover:bg-slate-100 px-5 py-2.5 rounded-2xl font-bold text-sm tracking-wide shrink-0 transition-all shadow-md active:scale-95"
           >
             {isHi ? 'इमरजेंसी मैप' : 'Emergency Route'}
           </button>
@@ -602,18 +602,18 @@ export function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Card 4: Emergency Casualty Bypass Notice - Vivid Magenta (#F62088) with white bold text */}
+          {/* Card 4: Emergency Casualty Bypass Notice - Medical Emergency Red (#DC2626) with white bold text */}
           <motion.div
             whileHover={{ y: -4 }}
             onClick={() => navigate('/emergency')}
-            className="cursor-pointer rounded-2xl p-6 bg-[#F62088] text-white shadow-[0_8px_24px_rgba(246,32,136,0.35)] relative overflow-hidden group hover:bg-[#D81473] transition-all flex flex-col justify-between border-2 border-[#F62088]"
+            className="cursor-pointer rounded-2xl p-6 bg-[#DC2626] text-white shadow-[0_8px_24px_rgba(220,38,38,0.35)] relative overflow-hidden group hover:bg-[#B91C1C] transition-all flex flex-col justify-between border-2 border-red-700"
           >
             <div>
               <div className="flex items-start justify-between">
                 <div className="p-3 bg-white/20 text-white rounded-2xl shadow-xs backdrop-blur-xs">
                   <ShieldAlert className="h-6 w-6 animate-pulse" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-white text-[#F62088] px-2.5 py-0.5 rounded-full shadow-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-white text-[#DC2626] px-2.5 py-0.5 rounded-full shadow-xs">
                   ZERO WAIT
                 </span>
               </div>
@@ -701,22 +701,22 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Delay Notice Banner if Doctor has a delay - Vivid Magenta (#F62088) with white bold text */}
+            {/* Delay Notice Banner if Doctor has a delay - Clinical Amber Warning */}
             {currentDept.delayMinutes > 0 && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="mt-5 p-4 bg-[#F62088] text-white rounded-2xl flex items-center justify-between text-xs font-bold shadow-sm"
+                className="mt-5 p-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs"
               >
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-white shrink-0" />
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
                   <span>
                     {isHi
                       ? `⚠️ डॉक्टर परामर्श विलंब: +${currentDept.delayMinutes} मिनट जुड़े (जटिल केस समीक्षा)`
                       : `⚠️ Doctor Consultation Delay: +${currentDept.delayMinutes} mins added (Critical case review)`}
                   </span>
                 </div>
-                <span className="text-[11px] bg-white text-[#F62088] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                <span className="text-[11px] bg-amber-200/80 text-amber-900 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
                   {isHi ? 'समय समायोजित' : 'Recalculated'}
                 </span>
               </motion.div>
@@ -979,7 +979,7 @@ export function Dashboard() {
                 <span>[ No-Show ]</span>
               </motion.button>
 
-              {/* Button 4: [ Doctor Delayed (+5 mins) ] - Vivid Magenta (#F62088) with white bold text */}
+              {/* Button 4: [ Doctor Delayed (+5 mins) ] */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -991,9 +991,9 @@ export function Dashboard() {
                       : 'Doctor Delayed: +5 mins added to estimated wait'
                   );
                 }}
-                className="w-full bg-[#F62088] hover:bg-[#D81473] text-white font-bold p-3 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-colors text-sm"
+                className="w-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold p-3 rounded-2xl shadow-xs flex items-center justify-center gap-2 transition-colors text-sm"
               >
-                <Clock className="h-4 w-4 text-white" />
+                <Clock className="h-4 w-4 text-amber-700" />
                 <span>[ Doctor Delayed (+5 mins) ]</span>
               </motion.button>
             </div>
