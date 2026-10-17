@@ -4,6 +4,63 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { QueueEntryStatus } from '@prisma/client';
 import { SocketEvents } from '@hospital-nav/shared-types';
 
+export interface QueueReceiptData {
+  receiptId: string;
+  tokenNumber: number;
+  currentNumber: number;
+  waitingCount: number;
+  averageConsultationTime: number;
+  estimatedWaitMinutes: number;
+  createdAt: Date;
+  patientName: string;
+  doctorName: string;
+  departmentName: string;
+  roomNumber: string;
+  hospitalName?: string;
+}
+
+export function buildQueueReceipt({
+  tokenNumber,
+  currentNumber,
+  waitingCount,
+  averageConsultationTime,
+  createdAt,
+  patientName,
+  doctorName,
+  departmentName,
+  roomNumber,
+  hospitalName = 'CityCare Hospital',
+}: {
+  tokenNumber: number;
+  currentNumber: number;
+  waitingCount: number;
+  averageConsultationTime: number;
+  createdAt: Date;
+  patientName: string;
+  doctorName: string;
+  departmentName: string;
+  roomNumber: string;
+  hospitalName?: string;
+}): QueueReceiptData {
+  const patientsAhead = Math.max(0, tokenNumber - currentNumber);
+  const estimatedWaitMinutes = patientsAhead * averageConsultationTime;
+
+  return {
+    receiptId: `RCPT-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`,
+    tokenNumber,
+    currentNumber,
+    waitingCount,
+    averageConsultationTime,
+    estimatedWaitMinutes,
+    createdAt,
+    patientName,
+    doctorName,
+    departmentName,
+    roomNumber,
+    hospitalName,
+  };
+}
+
 @Injectable()
 export class QueuesService {
   constructor(
@@ -37,13 +94,29 @@ export class QueuesService {
     const queue = await this.getDoctorQueue(doctorId);
     if (!queue.isActive) throw new BadRequestException('Queue is currently inactive');
 
-    // Check if patient is already waiting
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: {
+        user: { select: { name: true } },
+        department: { select: { name: true } },
+        room: { select: { roomNumber: true } },
+      },
+    });
+
+    if (!doctor) throw new NotFoundException('Doctor not found');
+
+    const patient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      include: { user: { select: { name: true } } },
+    });
+
+    if (!patient) throw new NotFoundException('Patient not found');
+
     const existing = await this.prisma.queueEntry.findFirst({
       where: { queueId: queue.id, patientId, status: QueueEntryStatus.WAITING },
     });
     if (existing) throw new BadRequestException('You are already in this queue');
 
-    // Atomic increment of waiting count and token generation
     const updatedQueue = await this.prisma.queue.update({
       where: { id: queue.id },
       data: { waitingCount: { increment: 1 } },
@@ -60,8 +133,27 @@ export class QueuesService {
       },
     });
 
+    const receipt = buildQueueReceipt({
+      tokenNumber,
+      currentNumber: updatedQueue.currentNumber,
+      waitingCount: updatedQueue.waitingCount,
+      averageConsultationTime: updatedQueue.averageConsultationTime,
+      createdAt: new Date(),
+      patientName: patient.user.name,
+      doctorName: doctor.user.name,
+      departmentName: doctor.department?.name || 'General Care',
+      roomNumber: doctor.room?.roomNumber || 'N/A',
+    });
+
     this.broadcastQueueUpdate(updatedQueue);
-    return entry;
+    return {
+      ...entry,
+      tokenNumber,
+      receipt,
+      doctorName: doctor.user.name,
+      departmentName: doctor.department?.name || 'General Care',
+      roomNumber: doctor.room?.roomNumber || 'N/A',
+    };
   }
 
   /**

@@ -1,20 +1,24 @@
 import { useNavigate } from 'react-router';
-import { MapPin, Search as SearchIcon, QrCode, AlertTriangle, Activity, Calendar, UserRound } from 'lucide-react';
+import { MapPin, Search as SearchIcon, QrCode, AlertTriangle, Activity, Calendar, UserRound, Clock, Users } from 'lucide-react';
 import { useAuthStore } from '../auth/authStore';
 import { motion, Variants } from 'framer-motion';
-import { AdminDashboard } from '../admin/AdminDashboard';
-import { DoctorDashboard } from '../doctors/DoctorDashboard';
-import { PatientDashboard } from '../patient/PatientDashboard';
+import { useQuery } from '@tanstack/react-query';
+import { doctorsApi, queuesApi } from '../../services/api.service';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
-  // Route to role-specific dashboards
-  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') return <AdminDashboard />;
-  if (user?.role === 'DOCTOR') return <DoctorDashboard />;
-  if (user?.role === 'PATIENT') return <PatientDashboard />;
+  // Fetch real doctors data
+  const { data: doctors = [], isLoading: doctorsLoading } = useQuery({
+    queryKey: ['doctors'],
+    queryFn: () => doctorsApi.list(),
+    refetchInterval: 30000,
+  });
 
+  // Calculate real stats
+  const availableDoctors = doctors.filter((d: any) => d.availabilityStatus === 'AVAILABLE').length;
+  const totalDoctors = doctors.length;
 
   const container: Variants = {
     hidden: { opacity: 0 },
@@ -39,19 +43,28 @@ export function Dashboard() {
       >
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
-            {user ? `Welcome, ${user.name}` : 'Welcome to CityCare'}
+            {user ? `Welcome, ${user.name}` : 'Welcome to ArogyaMitra'}
           </h1>
           <p className="text-slate-500 text-lg max-w-xl leading-relaxed">
             Manage your hospital visit effortlessly. Find your way, check doctor availability, and monitor your queues.
           </p>
         </div>
         
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border shadow-sm">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </span>
-          <span className="text-sm font-medium text-slate-700">Systems Online</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border shadow-sm">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-sm font-medium text-slate-700">Systems Online</span>
+          </div>
+          
+          {/* Live Stats */}
+          <div className="hidden md:flex items-center gap-3 bg-white px-4 py-2 rounded-full border shadow-sm">
+            <span className="text-sm text-slate-500">
+              <span className="font-bold text-emerald-600">{availableDoctors}</span> of {totalDoctors} doctors available
+            </span>
+          </div>
         </div>
       </motion.div>
 
@@ -119,52 +132,86 @@ export function Dashboard() {
         <div className="md:col-span-8 bg-white border rounded-[20px] shadow-sm p-7">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b">
             <Activity className="h-5 w-5 text-sky-500" />
-            <h3 className="font-semibold text-lg text-slate-900">Active Consultations</h3>
+            <h3 className="font-semibold text-lg text-slate-900">
+              {isAuthenticated ? 'Your Active Queues' : 'Available Doctors'}
+            </h3>
           </div>
           
-          {!user ? (
+          {!isAuthenticated ? (
             <div className="text-center py-10">
               <UserRound className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-              <p className="text-slate-500 mb-5">Please sign in to view your live queue status.</p>
+              <p className="text-slate-500 mb-5">Sign in to view your queue status and join doctor queues.</p>
               <button 
                 onClick={() => navigate('/login')}
                 className="bg-sky-500 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-sky-600 transition-colors shadow-sm"
               >
-                Sign In securely
+                Sign In
               </button>
             </div>
+          ) : doctorsLoading ? (
+            <div className="animate-pulse space-y-4">
+              {[1, 2].map(i => (
+                <div key={i} className="h-24 bg-slate-100 rounded-xl" />
+              ))}
+            </div>
+          ) : doctors.length === 0 ? (
+            <div className="text-center py-10 text-slate-400">
+              No doctors available at the moment.
+            </div>
           ) : (
-            <div className="space-y-4">
-              <div className="border rounded-xl p-5 hover:border-sky-200 transition-colors bg-slate-50/50">
-                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-lg">
-                      RP
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900">Dr. Rahul Patel</h4>
-                      <p className="text-sm text-slate-500">Cardiology • Room 101</p>
+            <div className="space-y-3">
+              {doctors.slice(0, 5).map((doctor: any) => {
+                const queue = doctor.queues?.[0];
+                const waitTime = queue ? queue.waitingCount * (queue.averageConsultationTime || 15) : 0;
+                
+                return (
+                  <div 
+                    key={doctor.id} 
+                    className="border rounded-xl p-4 hover:border-sky-200 transition-colors bg-slate-50/50 cursor-pointer"
+                    onClick={() => navigate(`/doctors/${doctor.id}`)}
+                  >
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-gradient-to-br from-sky-400 to-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                          {doctor.user?.name?.[0] || 'D'}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">{doctor.user?.name || 'Doctor'}</h4>
+                          <p className="text-sm text-slate-500">{doctor.specialization} • {doctor.department?.name || 'N/A'}</p>
+                        </div>
+                      </div>
+                      
+                      {queue && (
+                        <div className="flex items-center gap-4 bg-white p-3 rounded-lg border shadow-sm">
+                          <div className="text-center px-3">
+                            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Current</p>
+                            <p className="text-xl font-semibold text-sky-600">#{queue.currentNumber || 0}</p>
+                          </div>
+                          <div className="w-px h-8 bg-slate-200"></div>
+                          <div className="text-center px-3">
+                            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Waiting</p>
+                            <p className="text-xl font-semibold text-amber-500">{queue.waitingCount || 0}</p>
+                          </div>
+                          <div className="w-px h-8 bg-slate-200"></div>
+                          <div className="text-center px-3">
+                            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Est. Wait</p>
+                            <p className="text-xl font-semibold text-slate-600">~{waitTime}m</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-6 bg-white p-3 rounded-lg border shadow-sm">
-                    <div className="text-center px-3">
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Your Token</p>
-                      <p className="text-2xl font-bold text-slate-900">20</p>
-                    </div>
-                    <div className="w-px h-8 bg-slate-200"></div>
-                    <div className="text-center px-3">
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Current</p>
-                      <p className="text-xl font-semibold text-sky-600">15</p>
-                    </div>
-                    <div className="w-px h-8 bg-slate-200"></div>
-                    <div className="text-center px-3">
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Est. Wait</p>
-                      <p className="text-xl font-semibold text-amber-500">~60m</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
+              
+              {doctors.length > 5 && (
+                <button 
+                  onClick={() => navigate('/doctors')}
+                  className="w-full text-center py-3 text-sky-600 hover:text-sky-700 font-medium"
+                >
+                  View all {doctors.length} doctors →
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -172,21 +219,38 @@ export function Dashboard() {
         <div className="md:col-span-4 bg-white border rounded-[20px] shadow-sm p-7">
            <div className="flex items-center gap-3 mb-6 pb-4 border-b">
              <Calendar className="h-5 w-5 text-sky-500" />
-             <h3 className="font-semibold text-lg text-slate-900">Announcements</h3>
+             <h3 className="font-semibold text-lg text-slate-900">Quick Stats</h3>
            </div>
            
-           <div className="space-y-5">
-             <div className="group">
-               <p className="font-medium text-slate-900 mb-1 group-hover:text-sky-600 transition-colors cursor-pointer">Free Eye Checkup Camp</p>
-               <p className="text-slate-500 text-sm leading-relaxed">This Sunday in the main auditorium. Open for all registered patients.</p>
+           <div className="space-y-4">
+             <div className="bg-emerald-50 rounded-xl p-4">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-sm text-emerald-600">Available Doctors</p>
+                   <p className="text-2xl font-bold text-emerald-700">{availableDoctors}</p>
+                 </div>
+                 <Users className="h-8 w-8 text-emerald-400" />
+               </div>
              </div>
-             <div className="group">
-               <p className="font-medium text-slate-900 mb-1 group-hover:text-sky-600 transition-colors cursor-pointer">New MRI Facility</p>
-               <p className="text-slate-500 text-sm leading-relaxed">Radiology department is now equipped with a state-of-the-art 3T MRI.</p>
+             
+             <div className="bg-sky-50 rounded-xl p-4">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-sm text-sky-600">Total Doctors</p>
+                   <p className="text-2xl font-bold text-sky-700">{totalDoctors}</p>
+                 </div>
+                 <Activity className="h-8 w-8 text-sky-400" />
+               </div>
              </div>
-             <div className="group">
-               <p className="font-medium text-slate-900 mb-1 group-hover:text-sky-600 transition-colors cursor-pointer">Visitor Hours Update</p>
-               <p className="text-slate-500 text-sm leading-relaxed">Evening visitor hours extended to 8:00 PM starting this Monday.</p>
+             
+             <div className="bg-amber-50 rounded-xl p-4">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-sm text-amber-600">Avg. Wait Time</p>
+                   <p className="text-2xl font-bold text-amber-700">~15 min</p>
+                 </div>
+                 <Clock className="h-8 w-8 text-amber-400" />
+               </div>
              </div>
            </div>
         </div>

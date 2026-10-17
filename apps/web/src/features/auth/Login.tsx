@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuthStore } from './authStore';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { authApi } from '../../services/api.service';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -15,22 +16,35 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Invalid credentials');
+      const data = await authApi.login(email, password);
+      if (!data?.user?.role || !data?.tokens?.accessToken) {
+        throw new Error('Login response is missing user or token data');
       }
 
-      const data = await response.json();
       login(data.user, data.tokens);
       
       toast.success('Successfully logged in!');
-      navigate('/');
+      
+      // Navigate to role-specific dashboard
+      const role = data.user.role;
+      let dashboardPath = '/';
+      switch (role) {
+        case 'SUPER_ADMIN':
+        case 'ADMIN':
+          dashboardPath = '/admin';
+          break;
+        case 'DOCTOR':
+          dashboardPath = '/doctor';
+          break;
+        case 'STAFF':
+          dashboardPath = '/staff';
+          break;
+        case 'PATIENT':
+        default:
+          dashboardPath = '/patient';
+          break;
+      }
+      navigate(dashboardPath);
     } catch (error: any) {
       toast.error(error.message || 'Failed to connect to the server');
     } finally {
@@ -42,11 +56,9 @@ export function Login() {
     <div className="min-h-[70vh] flex items-center justify-center p-4">
       <div className="w-full max-w-md p-8 bg-white border rounded-[20px] shadow-sm">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-sky-500 text-white flex items-center justify-center mx-auto mb-4 shadow-sm text-2xl font-bold">
-            C
-          </div>
+          <img src="/logo-white.png" alt="ArogyaMitra Logo" className="w-16 h-16 rounded-xl object-cover mx-auto mb-4 shadow-sm" />
           <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
-          <p className="text-slate-500 mt-2">Sign in to your CityCare account</p>
+          <p className="text-slate-500 mt-2">Sign in to your ArogyaMitra account</p>
         </div>
         
         <form onSubmit={handleLogin} className="space-y-4">
@@ -57,7 +69,7 @@ export function Login() {
               className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="name@citycare.com"
+              placeholder="name@ArogyaMitra.com"
               required
               disabled={isLoading}
             />

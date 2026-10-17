@@ -107,14 +107,12 @@ export function ProfilePage() {
       </div>
 
       {/* Logout */}
-      {user && (
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="h-5 w-5" /> Sign Out
-        </button>
-      )}
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors"
+      >
+        <LogOut className="h-5 w-5" /> Sign Out
+      </button>
     </div>
   );
 }

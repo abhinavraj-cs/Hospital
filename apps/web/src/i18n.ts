@@ -10,7 +10,7 @@ i18n
     resources: {
       en: {
         translation: {
-          welcome: 'Welcome to CityCare Hospital',
+          welcome: 'Welcome to ArogyaMitra Hospital',
           dashboard: 'Dashboard',
           navigate: 'Navigate',
           emergency: 'Emergency',

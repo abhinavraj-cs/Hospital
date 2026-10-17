@@ -282,14 +282,14 @@
 <span class="font-body-md text-on-surface">Wheelchair Accessible</span>
 <div class="relative">
 <input checked="" class="sr-only peer" type="checkbox">
-<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
 </div>
 </label>
 <label class="flex items-center justify-between cursor-pointer">
 <span class="font-body-md text-on-surface">Staff Only Route</span>
 <div class="relative">
 <input class="sr-only peer" type="checkbox">
-<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
 </div>
 </label>
 </div>
@@ -307,4 +307,69 @@
 </div>
 
 
+<script>
+(() => {
+  const API_URL = 'http://localhost:3001';
+  const getAuthHeaders = () => {
+    const raw = localStorage.getItem('auth-storage');
+    const headers = { 'Content-Type': 'application/json' };
+    if (!raw) return headers;
+    try {
+      const token = JSON.parse(raw)?.state?.tokens?.accessToken;
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {}
+    return headers;
+  };
+
+  async function loadMapMeta() {
+    const panel = document.getElementById('map-live-node-data');
+    if (!panel) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/navigation/nodes`, {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Navigation nodes unavailable');
+      const payload = await response.json();
+      const nodes = Array.isArray(payload) ? payload : (payload?.data ?? []);
+      const node = nodes[0] || {
+        id: 'ND-304-CRD',
+        label: 'Cardiology Waiting Area B',
+        nodeType: 'DEPARTMENT',
+        x: 120,
+        y: 240,
+      };
+
+      panel.innerHTML = `
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
+          <p class="font-label-md text-label-md text-on-surface-variant">Live node snapshot</p>
+          <h3 class="font-title-md text-title-md text-on-surface mt-2">${node.label || 'Selected Location'}</h3>
+          <div class="mt-3 space-y-2 text-sm text-on-surface-variant">
+            <div class="flex justify-between"><span>Node ID</span><span class="font-medium text-on-surface">${node.id}</span></div>
+            <div class="flex justify-between"><span>Type</span><span class="font-medium text-on-surface">${node.nodeType || 'Unknown'}</span></div>
+            <div class="flex justify-between"><span>Coordinates</span><span class="font-medium text-on-surface">${node.x}, ${node.y}</span></div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      panel.innerHTML = `
+        <div class="bg-surface-container-low border border-dashed border-outline-variant rounded-lg p-md">
+          <p class="font-label-md text-label-md text-on-surface-variant">Map metadata unavailable.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant">Start the API server to populate navigation nodes.</p>
+        </div>
+      `;
+    }
+  }
+
+  const panel = document.createElement('div');
+  panel.id = 'map-live-node-data';
+  panel.className = 'mt-lg';
+  const formContainer = document.querySelector('aside .p-md.flex-1.overflow-y-auto.flex.flex-col.gap-lg');
+  if (formContainer) {
+    formContainer.appendChild(panel);
+  }
+
+  loadMapMeta();
+})();
+</script>
 </body></html>

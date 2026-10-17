@@ -260,4 +260,97 @@
 </nav>
 
 
+<script>
+(() => {
+  const API_URL = 'http://localhost:3001';
+  const getAuthHeaders = () => {
+    const raw = localStorage.getItem('auth-storage');
+    const headers = { 'Content-Type': 'application/json' };
+    if (!raw) return headers;
+    try {
+      const token = JSON.parse(raw)?.state?.tokens?.accessToken;
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {}
+    return headers;
+  };
+
+  async function loadDoctors() {
+    const searchInput = document.getElementById('main-search');
+    const target = document.getElementById('patient-dynamic-doctors');
+    if (!target) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/doctors`, {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Doctors API unavailable');
+      const payload = await response.json();
+      const doctors = Array.isArray(payload) ? payload : (payload?.data ?? []);
+
+      if (searchInput && doctors.length) {
+        searchInput.placeholder = `Search ${doctors.length} doctors, specialties, or departments...`;
+      }
+
+      const items = doctors.slice(0, 4).map((doctor) => {
+        const name = doctor.user?.name || 'Doctor';
+        const specialization = doctor.specialization || 'General Practice';
+        const department = doctor.department?.name || 'Department';
+        const status = doctor.availabilityStatus || 'ON_LEAVE';
+        const room = doctor.room?.roomNumber || doctor.roomId || 'N/A';
+        const badgeClass = status === 'AVAILABLE'
+          ? 'bg-emerald-100 text-emerald-700'
+          : status === 'BUSY'
+            ? 'bg-amber-100 text-amber-700'
+            : 'bg-slate-200 text-slate-700';
+
+        return `
+          <div class="p-md border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+            <div class="flex items-center justify-between gap-md">
+              <div>
+                <p class="font-title-md text-title-md text-on-surface">${name}</p>
+                <p class="font-body-md text-body-md text-on-surface-variant">${specialization}</p>
+              </div>
+              <span class="px-2 py-1 rounded-full ${badgeClass} font-label-md text-label-md">${status.replace('_', ' ')}</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-sm text-on-surface-variant">
+              <span>${department}</span>
+              <span>Room ${room}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      target.innerHTML = `
+        <div class="bg-surface border border-outline-variant rounded-xl overflow-hidden">
+          <div class="p-md border-b border-outline-variant bg-surface-container-lowest">
+            <h2 class="font-title-md text-title-md text-on-surface">Live Doctor Directory</h2>
+          </div>
+          <div class="p-md flex flex-col gap-sm">
+            ${items}
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      target.innerHTML = `
+        <div class="p-md border border-dashed border-outline-variant rounded-xl bg-surface-container-low">
+          <p class="font-label-lg text-label-lg text-on-surface-variant">Live doctor directory unavailable.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant">Start the API server to load real patient data.</p>
+        </div>
+      `;
+    }
+  }
+
+  const target = document.createElement('section');
+  target.id = 'patient-dynamic-doctors';
+  target.className = 'mt-lg';
+  const nearbySection = document.querySelector('main section:last-of-type');
+  if (nearbySection) {
+    nearbySection.insertAdjacentElement('afterend', target);
+  } else {
+    document.querySelector('main')?.appendChild(target);
+  }
+
+  loadDoctors();
+})();
+</script>
 </body></html>

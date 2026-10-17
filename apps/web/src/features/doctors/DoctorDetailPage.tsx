@@ -41,7 +41,18 @@ export function DoctorDetailPage() {
   const joinQueueMutation = useMutation({
     mutationFn: () => queuesApi.join(id!, user?.id || ''),
     onSuccess: (entry) => {
+      const receipt = entry?.receipt ?? {
+        receiptId: `RCPT-${Date.now()}`,
+        tokenNumber: entry?.tokenNumber,
+        doctorName: doctor?.user?.name,
+        departmentName: doctor?.department?.name,
+        roomNumber: doctor?.room?.roomNumber || 'N/A',
+        estimatedWaitMinutes: queue?.waitingCount ? queue.waitingCount * (queue.averageConsultationTime || 15) : 0,
+      };
+
+      localStorage.setItem('queue-receipt', JSON.stringify({ ...receipt, doctorId: id }));
       toast.success(`Joined queue! Your token: #${entry.tokenNumber}`);
+      navigate(`/queue/${id}`);
       queryClient.invalidateQueries({ queryKey: ['doctor', id] });
     },
     onError: (err: any) => toast.error(err.message),

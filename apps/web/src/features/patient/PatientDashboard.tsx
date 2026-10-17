@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { doctorsApi } from '../../services/api.service';
 import { useAuthStore } from '../auth/authStore';
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Clock, Users, ArrowRight, Stethoscope, QrCode } from 'lucide-react';
+import { Search, MapPin, Clock, Users, ArrowRight, Stethoscope, QrCode, ReceiptText } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, string> = {
   AVAILABLE: 'text-emerald-600 bg-emerald-50',
@@ -16,6 +16,18 @@ export function PatientDashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [receipt, setReceipt] = useState<any>(null);
+
+  useEffect(() => {
+    const storedReceipt = localStorage.getItem('queue-receipt');
+    if (!storedReceipt) return;
+
+    try {
+      setReceipt(JSON.parse(storedReceipt));
+    } catch {
+      localStorage.removeItem('queue-receipt');
+    }
+  }, []);
 
   const { data: doctors = [], isLoading } = useQuery({
     queryKey: ['doctors'],
@@ -61,6 +73,26 @@ export function PatientDashboard() {
           </button>
         </div>
       </motion.div>
+
+      {receipt?.doctorId && (
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => navigate(`/queue/${receipt.doctorId}`)}
+          className="w-full flex items-center justify-between gap-4 bg-white border border-sky-200 rounded-2xl p-4 text-left shadow-sm hover:border-sky-400 hover:shadow-md transition-all"
+        >
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="h-10 w-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
+              <ReceiptText className="h-5 w-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold text-slate-900">Your Queue Receipt</span>
+              <span className="block text-sm text-slate-500 truncate">Token #{receipt.tokenNumber} · {receipt.doctorName || 'Doctor'}</span>
+            </span>
+          </span>
+          <ArrowRight className="h-5 w-5 text-sky-600 shrink-0" />
+        </motion.button>
+      )}
 
       {/* Live Stats */}
       <div className="grid grid-cols-2 gap-4">
@@ -116,7 +148,7 @@ export function PatientDashboard() {
                   onClick={() => navigate(`/doctors/${doctor.id}`)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
                       {doctor.user?.name?.[0] || 'D'}
                     </div>
                     <div className="flex-1 min-w-0">

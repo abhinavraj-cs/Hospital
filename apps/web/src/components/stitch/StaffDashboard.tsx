@@ -68,7 +68,7 @@ export function StaffDashboard() {
 <button className="text-on-surface-variant font-medium pb-1 font-label-lg text-label-lg hover:bg-surface-container-low transition-colors scale-95 active:opacity-80">GU</button>
 </div>
 <div className="font-label-lg text-label-lg text-on-surface-variant hidden sm:block border-l border-outline-variant pl-lg">
-                    CityCare Govt Hospital
+                    ArogyaMitra Govt Hospital
                 </div>
 </div>
 </header>

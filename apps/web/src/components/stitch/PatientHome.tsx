@@ -13,7 +13,7 @@ export function PatientHome() {
 <span className="text-on-surface-variant font-medium font-label-lg text-label-lg hover:bg-surface-container-low transition-colors cursor-pointer p-1 active:bg-primary-container">HI</span>
 <span className="text-on-surface-variant font-medium font-label-lg text-label-lg hover:bg-surface-container-low transition-colors cursor-pointer p-1 active:bg-primary-container">GU</span>
 </div>
-<span className="font-label-lg text-label-lg ml-md truncate max-w-[120px]">CityCare Govt Hospital</span>
+<span className="font-label-lg text-label-lg ml-md truncate max-w-[120px]">ArogyaMitra Govt Hospital</span>
 </div>
 </header>
 {/* TopAppBar Desktop (Hybrid Nav) */}
@@ -34,7 +34,7 @@ export function PatientHome() {
 <button className="text-on-surface-variant font-label-md text-label-md px-2 py-1 hover:bg-surface-variant rounded transition-colors">HI</button>
 <button className="text-on-surface-variant font-label-md text-label-md px-2 py-1 hover:bg-surface-variant rounded transition-colors">GU</button>
 </div>
-<span className="font-label-lg text-label-lg text-on-surface-variant">CityCare Govt Hospital</span>
+<span className="font-label-lg text-label-lg text-on-surface-variant">ArogyaMitra Govt Hospital</span>
 </div>
 </header>
 <main className="flex-grow flex flex-col md:flex-row pb-[80px] md:pb-0">

@@ -109,8 +109,8 @@ export const roomsApi = {
 
 // ─── Emergency ───────────────────────────────────────────────────────────────
 export const emergencyApi = {
-  getDestinations: (hospitalId: string) =>
-    request<any[]>(`/emergency/destinations?hospitalId=${hospitalId}`),
+  getDestinations: (hospitalId?: string) =>
+    request<any[]>(`/emergency/destinations${hospitalId ? `?hospitalId=${hospitalId}` : ''}`),
   getRoute: (from: string, destination: string) =>
     request<any>(`/emergency/route?from=${from}&destination=${destination}`),
 };

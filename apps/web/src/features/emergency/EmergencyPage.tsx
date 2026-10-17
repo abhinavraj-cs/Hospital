@@ -1,25 +1,69 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, Phone, HeartPulse, Ambulance, Zap } from 'lucide-react';
-import { navigationApi } from '../../services/api.service';
+import { emergencyApi } from '../../services/api.service';
 import { toast } from 'sonner';
 
-const EMERGENCY_DESTINATIONS = [
+const FALLBACK_DESTINATIONS = [
   { id: 'ER', label: 'Emergency Room', icon: HeartPulse, color: 'text-red-600', bg: 'bg-red-50 border-red-200', desc: 'For life-threatening emergencies' },
   { id: 'ICU', label: 'Intensive Care Unit', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200', desc: 'Critical care and monitoring' },
   { id: 'TRAUMA', label: 'Trauma Center', icon: Ambulance, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200', desc: 'Serious injuries and accidents' },
   { id: 'BLOOD_BANK', label: 'Blood Bank', icon: AlertTriangle, color: 'text-pink-600', bg: 'bg-pink-50 border-pink-200', desc: 'Emergency blood requirements' },
 ];
 
+const ICON_MAP: Record<string, any> = {
+  EMERGENCY: HeartPulse,
+  ICU: Zap,
+  TRAUMA: Ambulance,
+  BLOOD_BANK: AlertTriangle,
+  DEFAULT: HeartPulse,
+};
+
+const COLOR_MAP: Record<string, { color: string; bg: string }> = {
+  EMERGENCY: { color: 'text-red-600', bg: 'bg-red-50 border-red-200' },
+  ICU: { color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
+  TRAUMA: { color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
+  BLOOD_BANK: { color: 'text-pink-600', bg: 'bg-pink-50 border-pink-200' },
+  DEFAULT: { color: 'text-red-600', bg: 'bg-red-50 border-red-200' },
+};
+
 export function EmergencyPage() {
   const navigate = useNavigate();
   const [routing, setRouting] = useState<string | null>(null);
 
+  const { data: destinations = FALLBACK_DESTINATIONS } = useQuery({
+    queryKey: ['emergency-destinations'],
+    queryFn: async () => {
+      try {
+        const response = await emergencyApi.getDestinations();
+        if (!response || response.length === 0) return FALLBACK_DESTINATIONS;
+
+        return response.map((destination: any) => {
+          const key = (destination.nodeType || destination.type || 'DEFAULT').toUpperCase();
+          const Icon = ICON_MAP[key] || ICON_MAP.DEFAULT;
+          const palette = COLOR_MAP[key] || COLOR_MAP.DEFAULT;
+
+          return {
+            id: destination.id,
+            label: destination.label || destination.name || 'Emergency Destination',
+            icon: Icon,
+            color: palette.color,
+            bg: palette.bg,
+            desc: destination.metadata?.description || 'Emergency route available',
+          };
+        });
+      } catch {
+        return FALLBACK_DESTINATIONS;
+      }
+    },
+    staleTime: 60000,
+  });
+
   const handleNavigate = async (destId: string) => {
     setRouting(destId);
     try {
-      // Try to get emergency route from API — if it fails, navigate to map anyway
       await new Promise(r => setTimeout(r, 600));
       toast.success('Emergency route calculated — follow the highlighted path!', { duration: 4000 });
       navigate(`/navigate?preference=EMERGENCY&dest=${destId}`);
@@ -32,7 +76,6 @@ export function EmergencyPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-10">
-      {/* Alert Banner */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -55,12 +98,11 @@ export function EmergencyPage() {
         </a>
       </motion.div>
 
-      {/* Emergency Destinations */}
       <div>
         <h2 className="text-lg font-bold text-slate-800 mb-4">Navigate To Emergency Unit</h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          {EMERGENCY_DESTINATIONS.map((dest, i) => {
-            const Icon = dest.icon;
+          {destinations.map((dest: any, i: number) => {
+            const Icon = dest.icon || HeartPulse;
             const isRouting = routing === dest.id;
             return (
               <motion.button
@@ -73,7 +115,7 @@ export function EmergencyPage() {
                 className={`text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md active:scale-98 disabled:opacity-70 ${dest.bg}`}
               >
                 <div className="flex items-start justify-between">
-                  <div className={`p-3 rounded-xl bg-white shadow-sm`}>
+                  <div className="p-3 rounded-xl bg-white shadow-sm">
                     <Icon className={`h-7 w-7 ${dest.color}`} />
                   </div>
                   {isRouting ? (
@@ -95,7 +137,6 @@ export function EmergencyPage() {
         </div>
       </div>
 
-      {/* Emergency Contacts */}
       <div className="bg-white rounded-2xl border p-6">
         <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Phone className="h-5 w-5" /> Emergency Contacts</h2>
         <div className="space-y-3">

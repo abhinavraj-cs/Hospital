@@ -15,6 +15,25 @@ const ROUTE_PREFERENCES = [
   { value: 'EMERGENCY', label: 'Emergency Route' },
 ];
 
+const DISPLAY_NODE_POSITIONS: Record<string, L.LatLngExpression> = {
+  'Main Lobby (Health Info)': [150, 350],
+  'Admitting / Registration': [150, 525],
+  Pharmacy: [320, 525],
+  Lab: [240, 525],
+  'Emergency Department': [175, 225],
+  'Urgent Care Check-In': [425, 250],
+  'Visitor Elevators': [875, 300],
+  'Radiology (X-Ray)': [510, 300],
+  'Clinic Corridor': [450, 680],
+  'Pediatrics Clinic': [610, 837],
+  'Surgery Clinic': [710, 790],
+  'Internal Medicine': [210, 790],
+};
+
+function getDisplayPosition(node: { label?: string; x: number; y: number }): L.LatLngExpression {
+  return DISPLAY_NODE_POSITIONS[node.label || ''] || [node.y, node.x];
+}
+
 // Fix Leaflet default icon issue in Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -23,23 +42,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-function createColoredIcon(color: string) {
-  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28">
-    <circle cx="12" cy="12" r="10" fill="${color}" stroke="white" stroke-width="2"/>
-  </svg>`;
-  return L.divIcon({
-    html: svgIcon,
-    className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-}
-
 export function NavigationMap() {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const routeLayer = useRef<L.LayerGroup | null>(null);
-  const nodeLayer = useRef<L.LayerGroup | null>(null);
 
   const [fromNode, setFromNode] = useState('');
   const [toNode, setToNode] = useState('');
@@ -74,75 +80,22 @@ export function NavigationMap() {
 
     const map = L.map(mapRef.current, {
       crs: L.CRS.Simple,
-      minZoom: -2,
-      maxZoom: 4,
+      minZoom: -1,
+      maxZoom: 3,
       zoomControl: false,
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const bounds: L.LatLngBoundsExpression = [[0, 0], [1000, 1000]];
+    const bounds: L.LatLngBoundsExpression = [[0, 0], [1200, 1000]];
 
-    // Draw a simple floor plan background
-    const floorPlanSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
-      <rect width="1000" height="1000" fill="#f8f9fa"/>
-      <!-- Main corridors -->
-      <rect x="0" y="480" width="1000" height="40" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1"/>
-      <rect x="480" y="0" width="40" height="1000" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1"/>
-      <!-- Rooms -->
-      <rect x="20" y="20" width="200" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="120" y="95" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">Emergency</text>
-      <rect x="260" y="20" width="180" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="350" y="95" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">Radiology</text>
-      <rect x="560" y="20" width="180" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="650" y="95" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">Cardiology</text>
-      <rect x="780" y="20" width="200" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="880" y="95" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">Pharmacy</text>
-      <rect x="20" y="560" width="200" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="120" y="635" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">ICU</text>
-      <rect x="260" y="560" width="180" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="350" y="635" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">Pathology</text>
-      <rect x="560" y="560" width="180" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="650" y="635" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">Pediatrics</text>
-      <rect x="780" y="560" width="200" height="140" rx="4" fill="white" stroke="#94a3b8" stroke-width="2"/>
-      <text x="880" y="635" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="14">OPD</text>
-      <!-- Labels -->
-      <text x="500" y="505" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="12" opacity="0.6">MAIN CORRIDOR</text>
-    </svg>`;
-    const blob = new Blob([floorPlanSvg], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    L.imageOverlay(url, bounds).addTo(map);
+    L.imageOverlay('/map.png', bounds).addTo(map);
     map.fitBounds(bounds, { padding: [20, 20] });
 
     routeLayer.current = L.layerGroup().addTo(map);
-    nodeLayer.current = L.layerGroup().addTo(map);
-
     leafletMap.current = map;
-    return () => { map.remove(); leafletMap.current = null; URL.revokeObjectURL(url); };
+    return () => { map.remove(); leafletMap.current = null; };
   }, []);
-
-  // Draw nodes on map once loaded
-  useEffect(() => {
-    if (!nodeLayer.current || !nodes.length) return;
-    nodeLayer.current.clearLayers();
-    nodes.forEach((node: any) => {
-      const marker = L.circleMarker([node.y, node.x] as L.LatLngExpression, {
-        radius: 6,
-        fillColor: node.nodeType === 'EMERGENCY' ? '#ef4444' :
-                   node.nodeType === 'ENTRANCE' ? '#22c55e' :
-                   node.nodeType === 'ELEVATOR' ? '#f59e0b' : '#3b82f6',
-        color: 'white',
-        weight: 2,
-        fillOpacity: 0.9,
-      });
-      marker.bindTooltip(node.label || node.nodeType, { permanent: false });
-      marker.on('click', () => {
-        if (!fromNode) setFromNode(node.id);
-        else if (!toNode) setToNode(node.id);
-      });
-      nodeLayer.current!.addLayer(marker);
-    });
-  }, [nodes, fromNode, toNode]);
 
   const drawRoute = useCallback((data: any) => {
     if (!routeLayer.current || !leafletMap.current) return;
@@ -151,7 +104,7 @@ export function NavigationMap() {
     const path = data.path as any[];
     if (!path || path.length < 2) return;
 
-    const coords = path.map((n: any) => [n.y, n.x] as L.LatLngExpression);
+    const coords = path.map((n: any) => getDisplayPosition(n));
 
     // Draw animated polyline
     const routeLine = L.polyline(coords, {
@@ -162,19 +115,6 @@ export function NavigationMap() {
       lineJoin: 'round',
     });
     routeLayer.current.addLayer(routeLine);
-
-    // Draw arrow decorations
-    const arrowDecorator = (L as any).polylineDecorator?.(routeLine, {
-      patterns: [{ offset: '5%', repeat: '15%', symbol: (L as any).Symbol?.arrowHead?.({ pixelSize: 12, fill: true, polygon: false, pathOptions: { color: '#0284c7', weight: 2 } }) }],
-    });
-    if (arrowDecorator) routeLayer.current.addLayer(arrowDecorator);
-
-    // Start marker
-    L.marker(coords[0] as L.LatLngExpression, { icon: createColoredIcon('#22c55e') })
-      .bindPopup('Start').addTo(routeLayer.current!);
-    // End marker  
-    L.marker(coords[coords.length - 1] as L.LatLngExpression, { icon: createColoredIcon('#ef4444') })
-      .bindPopup('Destination').addTo(routeLayer.current!);
 
     leafletMap.current.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
   }, []);
@@ -193,6 +133,17 @@ export function NavigationMap() {
     if (voiceEnabled && routeData?.instructions?.[i]) {
       voiceService.speak(routeData.instructions[i].text);
     }
+
+    const instruction = routeData?.instructions?.[i];
+    const nodeId = instruction?.toNode || instruction?.fromNode;
+    const node = nodes.find((item: any) => item.id === nodeId);
+    if (node && leafletMap.current) {
+      leafletMap.current.setView(
+        getDisplayPosition(node),
+        Math.max(leafletMap.current.getZoom(), 1),
+        { animate: true },
+      );
+    }
   };
 
   return (
@@ -207,7 +158,7 @@ export function NavigationMap() {
         >
           <option value="">From: Select node...</option>
           {nodes.map((n: any) => (
-            <option key={n.id} value={n.id}>{n.label || n.nodeType} ({n.id.slice(0, 8)})</option>
+            <option key={n.id} value={n.id}>{n.label || n.nodeType}</option>
           ))}
         </select>
 
@@ -219,7 +170,7 @@ export function NavigationMap() {
         >
           <option value="">To: Select destination...</option>
           {nodes.map((n: any) => (
-            <option key={n.id} value={n.id}>{n.label || n.nodeType} ({n.id.slice(0, 8)})</option>
+            <option key={n.id} value={n.id}>{n.label || n.nodeType}</option>
           ))}
         </select>
 
@@ -305,19 +256,35 @@ export function NavigationMap() {
           </div>
 
           {/* Legend */}
-          <div className="p-3 border-t bg-slate-50 text-xs space-y-1">
-            <p className="font-semibold text-slate-600 mb-2">Legend</p>
-            {[
-              { color: '#22c55e', label: 'Entrance / Start' },
-              { color: '#ef4444', label: 'Emergency / End' },
-              { color: '#f59e0b', label: 'Elevator' },
-              { color: '#3b82f6', label: 'Corridor / Room' },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: item.color }} />
-                <span className="text-slate-600">{item.label}</span>
-              </div>
-            ))}
+          <div className="p-3 border-t bg-slate-50 text-xs space-y-3">
+            <div>
+              <p className="font-semibold text-slate-600 mb-2">Map Areas</p>
+              {[
+                { color: '#73b6cc', label: 'Outpatient clinics' },
+                { color: '#0f9d91', label: 'Rehabilitation services' },
+                { color: '#ffca28', label: 'Urgent care / emergency' },
+                { color: '#d83c2d', label: 'Pharmacy, lab, admitting' },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: item.color }} />
+                  <span className="text-slate-600">{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <p className="font-semibold text-slate-600 mb-2">Navigation Markers</p>
+              {[
+                { color: '#22c55e', label: 'Entrance / route start' },
+                { color: '#ef4444', label: 'Emergency / route destination' },
+                { color: '#f59e0b', label: 'Elevator' },
+                { color: '#3b82f6', label: 'Room, department, corridor' },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: item.color }} />
+                  <span className="text-slate-600">{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

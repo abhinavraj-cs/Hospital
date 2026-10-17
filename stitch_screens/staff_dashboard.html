@@ -111,7 +111,7 @@
 </head>
 <body class="bg-background text-on-background flex h-screen overflow-hidden">
 <!-- SideNavBar (Web Only) -->
-<aside class="hidden md:flex flex-col h-full py-lg bg-surface-container-lowest border-r border-outline-variant docked left-0 h-full w-64 z-20">
+<aside class="hidden md:flex flex-col h-full py-lg bg-surface-container-lowest border-r border-outline-variant docked left-0 w-64 z-20">
 <div class="px-md mb-lg">
 <h2 class="font-headline-lg text-headline-lg font-bold text-primary">CareNav</h2>
 </div>
@@ -264,7 +264,7 @@
 </div>
 </div>
 <!-- Simplified Map View -->
-<div class="relative bg-surface-container rounded-lg border border-outline-variant flex items-center justify-center min-h-[200px] overflow-hidden">
+<div class="relative bg-surface-container rounded-lg border border-outline-variant flex items-center justify-center min-h-50 overflow-hidden">
 <div class="absolute inset-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, #c4c6cf 0, #c4c6cf 1px, transparent 0, transparent 50%); background-size: 20px 20px;"></div>
 <span class="font-label-lg text-label-lg text-outline z-10 flex flex-col items-center gap-sm">
 <span class="material-symbols-outlined text-4xl">map</span>
@@ -332,7 +332,7 @@
 </div>
 </main>
 <!-- BottomNavBar (Mobile Only) -->
-<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface border-t border-outline-variant docked full-width bottom-0 rounded-t-lg shadow-sm h-16">
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface border-t border-outline-variant docked full-width rounded-t-lg shadow-sm h-16">
 <button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 w-16 active:scale-95 transition-transform">
 <span class="material-symbols-outlined filled-icon">layers</span>
 <span class="font-label-md text-label-md mt-1">Floor 1</span>
@@ -352,4 +352,99 @@
 </nav>
 
 
+<script>
+(() => {
+  const API_URL = 'http://localhost:3001';
+  const getAuthHeaders = () => {
+    const raw = localStorage.getItem('auth-storage');
+    const headers = { 'Content-Type': 'application/json' };
+    if (!raw) return headers;
+    try {
+      const token = JSON.parse(raw)?.state?.tokens?.accessToken;
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {}
+    return headers;
+  };
+
+  async function loadStaffMetrics() {
+    const target = document.getElementById('staff-dynamic-metrics');
+    if (!target) return;
+
+    try {
+      const [statsRes, queueRes] = await Promise.all([
+        fetch(`${API_URL}/api/admin/stats`, { headers: getAuthHeaders() }),
+        fetch(`${API_URL}/api/admin/queue-overview`, { headers: getAuthHeaders() }),
+      ]);
+
+      if (!statsRes.ok) throw new Error('Admin API unavailable');
+
+      const stats = await statsRes.json();
+      const queueData = await queueRes.json().catch(() => []);
+      const metrics = stats?.data ?? stats ?? {};
+      const queueCount = Array.isArray(queueData) ? queueData.length : 0;
+      const waitingPatients = metrics.waitingPatients ?? 0;
+      const availableDoctors = metrics.availableDoctors ?? 0;
+      const totalPatients = metrics.totalPatients ?? 0;
+
+      target.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col justify-between h-32">
+            <div class="flex justify-between items-start">
+              <span class="font-label-lg text-label-lg text-on-surface-variant">Available Doctors</span>
+              <span class="material-symbols-outlined text-secondary">medical_services</span>
+            </div>
+            <div class="flex items-baseline gap-sm">
+              <span class="font-display-lg text-display-lg text-primary">${availableDoctors}</span>
+              <span class="font-label-md text-label-md text-on-surface-variant">live</span>
+            </div>
+          </div>
+          <div class="bg-error-container border border-error rounded-lg p-md flex flex-col justify-between h-32">
+            <div class="flex justify-between items-start">
+              <span class="font-label-lg text-label-lg text-on-error-container">Waiting Patients</span>
+              <span class="material-symbols-outlined text-error">groups</span>
+            </div>
+            <div class="flex items-baseline gap-sm">
+              <span class="font-display-lg text-display-lg text-on-error-container">${waitingPatients}</span>
+              <span class="font-label-md text-label-md text-error">${queueCount} queues</span>
+            </div>
+          </div>
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col justify-between h-32">
+            <div class="flex justify-between items-start">
+              <span class="font-label-lg text-label-lg text-on-surface-variant">Total Patients</span>
+              <span class="material-symbols-outlined text-secondary">person</span>
+            </div>
+            <div class="flex items-baseline gap-sm">
+              <span class="font-display-lg text-display-lg text-primary">${totalPatients}</span>
+              <span class="font-label-md text-label-md text-on-surface-variant">registered</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      target.innerHTML = `
+        <div class="bg-surface-container-low border border-dashed border-outline-variant rounded-lg p-md">
+          <p class="font-label-lg text-label-lg text-on-surface-variant">Admin data is unavailable.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant">Sign in as an admin and start the backend to populate this dashboard.</p>
+        </div>
+      `;
+    }
+  }
+
+  const target = document.createElement('div');
+  target.id = 'staff-dynamic-metrics';
+  target.className = 'mt-lg';
+  const metricsBlock = document.querySelector('#staff-dynamic-metrics');
+  if (!metricsBlock) {
+    const container = document.querySelector('.max-w-7xl.mx-auto.space-y-lg');
+    const firstMetricGrid = document.querySelector('.grid.grid-cols-1.md\:grid-cols-3.gap-md');
+    if (firstMetricGrid) {
+      firstMetricGrid.insertAdjacentElement('afterend', target);
+    } else if (container) {
+      container.insertAdjacentElement('afterend', target);
+    }
+  }
+
+  loadStaffMetrics();
+})();
+</script>
 </body></html>

@@ -1,31 +1,49 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { useEffect } from 'react';
 import { QrCode, MapPin } from 'lucide-react';
 
 export function ScanPage() {
   const [scanResult, setScanResult] = useState<string | null>(null);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
-    // Basic setup for html5-qrcode scanner
-    const scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      /* verbose= */ false
-    );
+    let cancelled = false;
+    const initTimer = window.setTimeout(() => {
+      if (cancelled || scannerRef.current) return;
 
-    scanner.render(
-      (decodedText) => {
-        setScanResult(decodedText);
-        scanner.clear();
-      },
-      (error) => {
-        // Handle scan failure silently
-      }
-    );
+      const container = document.getElementById('qr-reader');
+      if (!container) return;
+      container.replaceChildren();
+
+      const scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false
+      );
+      scannerRef.current = scanner;
+
+      scanner.render(
+        (decodedText) => {
+          setScanResult(decodedText);
+          scanner.clear().catch(() => undefined);
+          scannerRef.current = null;
+        },
+        () => undefined
+      );
+    }, 0);
 
     return () => {
-      scanner.clear().catch(e => console.error("Failed to clear scanner", e));
+      cancelled = true;
+      window.clearTimeout(initTimer);
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
+      if (scanner) {
+        scanner.clear()
+          .catch(() => undefined)
+          .finally(() => document.getElementById('qr-reader')?.replaceChildren());
+      } else {
+        document.getElementById('qr-reader')?.replaceChildren();
+      }
     };
   }, []);
 
