@@ -30,7 +30,26 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Audio synthesis phrases
     audioPhrase: 'Token {token}. Your approximate waiting time is {time} minutes.',
-    emergencyNotice: 'Emergency cases bypass this queue. Please report to Casualty directly.'
+    emergencyNotice: 'Emergency cases bypass this queue. Please report to Casualty directly.',
+    
+    // Analytics & Capacity Row
+    analyticsTitle: 'Hospital Queue Analytics & Real-Time Capacity',
+    analyticsSubtitle: 'Live hospital census, counter availability, and patient flow monitoring',
+    avgFootfall: 'Avg Footfall',
+    avgFootfallSub: 'Daily patient throughput',
+    footfallUnit: 'patients/day',
+    peakHours: 'Hospital Peak Hours',
+    peakHoursSub: 'Maximum OPD congestion',
+    peakHoursVal: '09:30 AM - 01:00 PM',
+    peopleInQueue: 'People in Queue',
+    peopleInQueueSub: 'Live across all counters',
+    peopleUnit: 'waiting',
+    countersAvailable: 'Doctor Counters Available',
+    countersAvailableSub: 'Live OPD rooms consulting',
+    countersUnit: 'active',
+    meanWaitTime: 'Mean Waiting Time',
+    meanWaitTimeSub: 'Dynamic real-time estimate',
+    minsUnit: 'mins'
   },
   hi: {
     // Navigation
@@ -51,7 +70,26 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Audio synthesis phrases
     audioPhrase: 'टोकन संख्या {token}। आपकी बारी आने में लगभग {time} मिनट शेष हैं।',
-    emergencyNotice: 'आपातकालीन मरीज इस लाइन में न लगें, सीधे कैजुअल्टी कक्ष में जाएं।'
+    emergencyNotice: 'आपातकालीन मरीज इस लाइन में न लगें, सीधे कैजुअल्टी कक्ष में जाएं।',
+
+    // Analytics & Capacity Row
+    analyticsTitle: 'अस्पताल कतार एनालिटिक्स एवं वास्तविक क्षमता',
+    analyticsSubtitle: 'लाइव मरीज गणना, सक्रिय काउंटर एवं अस्पताल प्रवाह निगरानी',
+    avgFootfall: 'औसत दैनिक फुटफॉल',
+    avgFootfallSub: 'दैनिक मरीज आवक',
+    footfallUnit: 'मरीज / दिन',
+    peakHours: 'अधिकतम भीड़ के घंटे',
+    peakHoursSub: 'अधिकतम ओपीडी लोड',
+    peakHoursVal: '09:30 पूर्वाह्न - 01:00 अपराह्न',
+    peopleInQueue: 'कतार में कुल मरीज',
+    peopleInQueueSub: 'सभी काउंटरों पर लाइव प्रतीक्षा',
+    peopleUnit: 'प्रतीक्षारत',
+    countersAvailable: 'सक्रिय डॉक्टर काउंटर',
+    countersAvailableSub: 'खुले ओपीडी परामर्श कक्ष',
+    countersUnit: 'सक्रिय',
+    meanWaitTime: 'औसत प्रतीक्षा समय',
+    meanWaitTimeSub: 'गतिशील लाइव अनुमान',
+    minsUnit: 'मिनट'
   }
 };
 

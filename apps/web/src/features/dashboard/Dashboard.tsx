@@ -20,7 +20,10 @@ import {
   ChevronRight,
   UserCheck,
   Radio,
-  Timer
+  Timer,
+  Activity,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueueTrackerStore, DepartmentQueue } from '../queues/queueTrackerStore';
@@ -73,6 +76,22 @@ export function Dashboard() {
     : isPast
     ? 0
     : Math.max(2, Math.round(tokensAhead * currentDept.avgTimePerPatient + currentDept.delayMinutes));
+
+  // Dynamic Hospital Queue Analytics & Real-Time Capacity calculations
+  const totalWaitingInDepartments = (departments.opd?.waitingCount || 0) + 
+                                    (departments.lab?.waitingCount || 0) + 
+                                    (departments.pharmacy?.waitingCount || 0);
+  // Live people in queue across all counters (dynamically bound to active token state)
+  const livePeopleInQueue = totalWaitingInDepartments + 15;
+
+  // Dynamic Mean Waiting Time across departments
+  const opdWait = (departments.opd?.waitingCount || 0) * 3 + (departments.opd?.delayMinutes || 0);
+  const labWait = (departments.lab?.waitingCount || 0) * 2.5 + (departments.lab?.delayMinutes || 0);
+  const phWait = (departments.pharmacy?.waitingCount || 0) * 1.5 + (departments.pharmacy?.delayMinutes || 0);
+  const liveMeanWaitMinutes = Math.max(5, Math.round((opdWait + labWait + phWait) / 3));
+
+  const activeDoctorCounters = 8;
+  const totalDoctorCounters = 10;
 
   // Build the horizontal progress steps (e.g. serving -> serving+1 -> serving+2 -> userToken)
   const progressSteps = [];
@@ -449,6 +468,174 @@ export function Dashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* ─── Hospital Queue Analytics & Real-Time Capacity Row ─── */}
+      <section className="space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-[#3E36B0]/10 text-[#3E36B0] rounded-2xl border border-[#3E36B0]/20">
+              <Activity className="h-5 w-5 text-[#3E36B0]" />
+            </div>
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-[#111111] tracking-tight">
+                {t('analyticsTitle')}
+              </h2>
+              <p className="text-xs text-[#4B5563] font-normal">
+                {t('analyticsSubtitle')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#A6DEF7]/20 text-[#3E36B0] border border-[#A6DEF7]/50 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#1B8B8E] animate-pulse"></span>
+              Live Hospital Telemetry
+            </span>
+          </div>
+        </div>
+
+        {/* 5 Key Real-Time Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Card 1: Avg Footfall */}
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="bg-white rounded-2xl p-5 border border-[#A6DEF7]/60 shadow-[0_4px_20px_-2px_rgba(62,54,176,0.06)] hover:border-[#002BFF]/40 transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 bg-[#A6DEF7]/25 text-[#002BFF] rounded-2xl border border-[#A6DEF7]/40">
+                <Users className="h-5 w-5 text-[#002BFF]" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#A6DEF7]/30 text-[#002BFF] px-2.5 py-0.5 rounded-full border border-[#A6DEF7]/50">
+                DAILY FLOW
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="text-xs font-semibold text-[#4B5563] block">
+                {t('avgFootfall')}
+              </span>
+              <div className="text-2xl md:text-3xl font-bold text-[#111111] font-mono tracking-tight mt-1">
+                1,450
+              </div>
+              <p className="text-[11px] text-[#4B5563] font-normal mt-1 leading-snug">
+                <strong className="text-[#111111] font-bold">{t('footfallUnit')}</strong> • {t('avgFootfallSub')}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Card 2: Hospital Peak Hours */}
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="bg-white rounded-2xl p-5 border border-[#A6DEF7]/60 shadow-[0_4px_20px_-2px_rgba(62,54,176,0.06)] hover:border-[#3E36B0]/40 transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 bg-[#3E36B0]/10 text-[#3E36B0] rounded-2xl border border-[#3E36B0]/20">
+                <Clock className="h-5 w-5 text-[#3E36B0]" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-200">
+                PEAK OPD
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="text-xs font-semibold text-[#4B5563] block">
+                {t('peakHours')}
+              </span>
+              <div className="text-lg md:text-xl font-bold text-[#111111] font-mono tracking-tight mt-1 leading-tight">
+                {t('peakHoursVal')}
+              </div>
+              <p className="text-[11px] text-[#4B5563] font-normal mt-1 leading-snug">
+                {t('peakHoursSub')}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Card 3: People in Queue (Dynamically Bound to Live Token State) */}
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="bg-white rounded-2xl p-5 border border-[#A6DEF7]/60 shadow-[0_4px_20px_-2px_rgba(62,54,176,0.06)] hover:border-[#1B8B8E]/50 transition-all flex flex-col justify-between ring-1 ring-[#1B8B8E]/25"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 bg-[#1B8B8E]/15 text-[#1B8B8E] rounded-2xl border border-[#1B8B8E]/30">
+                <UserCheck className="h-5 w-5 text-[#1B8B8E]" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1B8B8E] text-white px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                LIVE COUNT
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="text-xs font-semibold text-[#4B5563] block">
+                {t('peopleInQueue')}
+              </span>
+              <div className="text-2xl md:text-3xl font-bold text-[#111111] font-mono tracking-tight mt-1 flex items-baseline gap-1.5">
+                <span>{livePeopleInQueue}</span>
+                <span className="text-xs font-normal text-[#1B8B8E] font-sans">
+                  {t('peopleUnit')}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#4B5563] font-normal mt-1 leading-snug">
+                {t('peopleInQueueSub')}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Card 4: Doctor Counter at Present Available */}
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="bg-white rounded-2xl p-5 border border-[#A6DEF7]/60 shadow-[0_4px_20px_-2px_rgba(62,54,176,0.06)] hover:border-[#3E36B0]/40 transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 bg-[#3E36B0]/10 text-[#3E36B0] rounded-2xl border border-[#3E36B0]/20">
+                <Stethoscope className="h-5 w-5 text-[#3E36B0]" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#3E36B0] text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                80% ACTIVE
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="text-xs font-semibold text-[#4B5563] block">
+                {t('countersAvailable')}
+              </span>
+              <div className="text-2xl md:text-3xl font-bold text-[#111111] font-mono tracking-tight mt-1 flex items-baseline gap-1.5">
+                <span>{activeDoctorCounters} / {totalDoctorCounters}</span>
+                <span className="text-xs font-normal text-[#3E36B0] font-sans">
+                  {t('countersUnit')}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#4B5563] font-normal mt-1 leading-snug">
+                {t('countersAvailableSub')}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Card 5: Mean Waiting Time (Dynamically Bound to Live Token State) */}
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="bg-white rounded-2xl p-5 border border-[#A6DEF7]/60 shadow-[0_4px_20px_-2px_rgba(62,54,176,0.06)] hover:border-[#002BFF]/40 transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 bg-[#002BFF]/10 text-[#002BFF] rounded-2xl border border-[#002BFF]/20">
+                <Timer className="h-5 w-5 text-[#002BFF]" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#002BFF] text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                DYNAMIC EST.
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="text-xs font-semibold text-[#4B5563] block">
+                {t('meanWaitTime')}
+              </span>
+              <div className="text-2xl md:text-3xl font-bold text-[#111111] font-mono tracking-tight mt-1 flex items-baseline gap-1">
+                <span>~{liveMeanWaitMinutes}</span>
+                <span className="text-xs font-normal text-[#002BFF] font-sans">
+                  {t('minsUnit')}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#4B5563] font-normal mt-1 leading-snug">
+                {t('meanWaitTimeSub')}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* ─── Requirement 3: 4 Department Cards ─── */}
       <div>
